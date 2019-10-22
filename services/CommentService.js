@@ -77,30 +77,7 @@ const getById = async (req, res) => {
 
 
 // update
-// const update = async (req, res) => {
-//     if (!req.body.text) {
-//         return res.status(400).send({
-//             message: "Comment must have text."
-//         })
-//     }
-
-//     if (!req.body.userId) {
-//         return res.status(400).send({
-//             message: "Comment must have a user."
-//         })
-//     }
-
-//     if (!req.body.listId && !req.body.placeId) {
-//         return res.status(400).send({
-//             message: "Comment must have either a list or a place."
-//         })
-//     }
-
-
-// }
-// module.exports = { update }
-
-exports.update = (req, res) => {
+const update = async (req, res) => {
     if (!req.body.text) {
         return res.status(400).send({
             message: "Comment must have text."
@@ -119,20 +96,20 @@ exports.update = (req, res) => {
         })
     }
 
-    Comment.findByIdAndUpdate(req.params.id, {
-        listId: req.body.listId,
-        placeId: req.body.placeId,
-        text: req.body.text,
-        userId: req.body.userId
-    }, { new : true })
-    .then(comment => {
+    try {
+        const comment = await Comment.findByIdAndUpdate(req.params.id, {
+            listId: req.body.listId,
+            placeId: req.body.placeId,
+            text: req.body.text,
+            userId: req.body.userId    
+        }, { new : true })
         if (!comment) {
             return res.status(404).send({
                 message: "Comment not found with id " + req.params.id
             })
         }
         res.send(comment)
-    }).catch(err => {
+    } catch(err) {
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
                 message: "Comment not found with id " + req.params.id
@@ -142,14 +119,14 @@ exports.update = (req, res) => {
         return res.status(500).send({
             message: "An error occurred while updating Comment with id " + req.params.id
         })
-    })
+    }
 }
 
 
 // delete
-exports.delete = (req, res) => {
-    Comment.findByIdAndDelete(req.params.id)
-    .then(comment => {
+const remove = async (req, res) => {
+    try {
+        const comment = await Comment.findByIdAndDelete(req.params.id)
         if (!comment) {
             return res.status(404).send({
                 message: "Comment not found with id " + req.params.id
@@ -157,18 +134,18 @@ exports.delete = (req, res) => {
         }
         res.send({
             message: "Successfully deleted Comment with id " + req.params.id
-        }).catch(err => {
-            if (err.kind === 'ObjectId' || err.name === 'NotFound') {
-                return res.status(404).send({
-                    message: "Comment not found with id " + req.params.id
-                })
-            }
-            return res.status(500).send({
-                message: "An error occurred while deleting Comment with id " + req.params.id
-            })
         })
-    })
+    } catch(err) {
+        if (err.kind === 'ObjectId' || err.name === 'NotFound') {
+            return res.status(404).send({
+                message: "Comment not found with id " + req.params.id
+            })
+        }
+        return res.status(500).send({
+            message: "An error occurred while deleting Comment with id " + req.params.id
+        })
+    }
 }
 
 
-module.exports = { create, get, getById }
+module.exports = { create, get, getById, update, remove }   

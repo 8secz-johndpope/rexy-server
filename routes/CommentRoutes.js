@@ -7,7 +7,7 @@ module.exports = (app) => {
 
     app.get('/comments/:id', comments.getById)
 
-    // app.put('/comments/:id', comments.update)
+    app.put('/comments/:id', comments.update)
 
-    // app.delete('/comments/:id', comments.delete)
+    app.delete('/comments/:id', comments.remove)
 }
