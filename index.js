@@ -10,6 +10,7 @@ app.use(bodyParser.urlencoded({extended : true}))
 
 // parse application/json
 app.use(bodyParser.json())
+app.use(express.json())
 
 // configure database
 const databaseConfig = require('./config/database.config.js')
