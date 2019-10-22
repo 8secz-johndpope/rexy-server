@@ -48,8 +48,7 @@ exports.findAll = (req, res) => {
 }
 
 exports.findOne = (res, req) => {
-    console.log("params", req.params)
-    console.log("id", req.params.id)
+    console.log("req", req)
 
     Comment.findById(req.params.id)
     .then(comment => {
