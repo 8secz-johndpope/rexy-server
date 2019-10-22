@@ -8,10 +8,10 @@ exports.create = (req, res) => {
     }
 
     const comment = new Comment({
-        listId = req.body.listId,
-        placeId = req.body.placeId,
-        text = req.body.text,
-        userId = req.body.userId
+        listId: req.body.listId,
+        placeId: req.body.placeId,
+        text: req.body.text,
+        userId: req.body.userId
     })
 
     comment.save()
