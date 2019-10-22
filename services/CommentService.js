@@ -50,23 +50,23 @@ exports.findAll = (req, res) => {
 }
 
 exports.findOne = (res, req) => {
-    Comment.findById(req.params.commentId)
+    Comment.findById(req.params.id)
     .then(comment => {
         if (!comment) {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.commentId
+                message: "Comment not found with id " + req.params.id
             })
         }
         res.send(comment)
     }).catch(err => {
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.commentId
+                message: "Comment not found with id " + req.params.id
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while retrieving Comment with id " + req.params.commentId
+            message: "An error occurred while retrieving Comment with id " + req.params.id
         })
     })
 }
@@ -90,7 +90,7 @@ exports.update = (req, res) => {
         })
     }
 
-    Comment.findByIdAndUpdate(req.params.commentId, {
+    Comment.findByIdAndUpdate(req.params.id, {
         listId: req.body.listId,
         placeId: req.body.placeId,
         text: req.body.text,
@@ -99,41 +99,41 @@ exports.update = (req, res) => {
     .then(comment => {
         if (!comment) {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.commentId
+                message: "Comment not found with id " + req.params.id
             })
         }
         res.send(comment)
     }).catch(err => {
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.commentId
+                message: "Comment not found with id " + req.params.id
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while updating Comment with id " + req.params.commentId
+            message: "An error occurred while updating Comment with id " + req.params.id
         })
     })
 }
 
 exports.delete = (req, res) => {
-    Comment.findByIdAndDelete(req.params.commentId)
+    Comment.findByIdAndDelete(req.params.id)
     .then(comment => {
         if (!comment) {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.commentId
+                message: "Comment not found with id " + req.params.id
             })
         }
         res.send({
-            message: "Successfully deleted Comment with id " + req.params.commentId
+            message: "Successfully deleted Comment with id " + req.params.id
         }).catch(err => {
             if (err.kind === 'ObjectId' || err.name === 'NotFound') {
                 return res.status(404).send({
-                    message: "Comment not found with id " + req.params.commentId
+                    message: "Comment not found with id " + req.params.id
                 })
             }
             return res.status(500).send({
-                message: "An error occurred while deleting Comment with id " + req.params.commentId
+                message: "An error occurred while deleting Comment with id " + req.params.id
             })
         })
     })
