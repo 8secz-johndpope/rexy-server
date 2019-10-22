@@ -34,6 +34,8 @@ app.get('/', (req, res) => {
 
 require('./routes/CommentRoutes.js')(app)
 
-app.listen(3000, () => {
-    console.log("rexy-server listening on port 3000!")
+const port = process.env.PORT || 3000
+
+app.listen(port, () => {
+    console.log(`rexy-server listening on port ${port}!`)
 })
