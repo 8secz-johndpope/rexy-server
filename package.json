@@ -10,5 +10,8 @@
   "license": "ISC",
   "engines": {
     "node": "10.15.3"
+  },
+  "dependencies": {
+    "mongoose": "^5.7.6"
   }
 }
