@@ -1,12 +1,10 @@
 const mongoose = require('mongoose')
 
 const CommentSchema = new mongoose.Schema({
-    properties: {
-        listId: { type: mongoose.Schema.Types.ObjectId, ref: "List"},
-        placeId: { type: mongoose.Schema.Types.ObjectId, ref: "Place"},
-        text: String,
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User"}
-    }
+    listId: { type: mongoose.Schema.Types.ObjectId, ref: "List"},
+    placeId: { type: mongoose.Schema.Types.ObjectId, ref: "Place"},
+    text: { type: String, required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User"},
 }, {
     timestamps: true
 })
