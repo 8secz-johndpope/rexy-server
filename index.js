@@ -2,6 +2,8 @@ const http = require('http')
 const express = require('express')
 const app = express()
 
+const PORT = process.env.PORT || 5000
+
 app.get('/', (req, res) => res.send('Hello, Alex Oh!'))
 
 app.listen(port, () => {
@@ -20,7 +22,6 @@ app.listen(port, () => {
 // var mongoose = require('mongoose')
 
 // const hostname = '127.0.0.1'
-// const PORT = process.env.PORT || 5000
 
 // const server = http.createServer((req, res) => {
 //     res.statusCode = 200
