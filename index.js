@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
     res.json({"message" : "Hello, Alex Oh!"})
 })
 
-require('./app/routes/CommentRoute.js')(app)
+require('./app/routes/CommentRoutes.js')(app)
 
 app.listen(3000, () => {
     console.log("rexy-server listening on port 3000!")
