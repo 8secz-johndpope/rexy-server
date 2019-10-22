@@ -1,49 +1,39 @@
-const http = require('http')
+// const http = require('http')
 const express = require('express')
+const bodyParser = require('body-parser')
+
+// create express app
 const app = express()
 
-const PORT = process.env.PORT || 5000
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({extended : true}))
 
+// parse application/json
+app.use(bodyParser.json())
+
+// configure database
+const databaseConfig = require('./config/database.config.js')
+const mongoose = require('mongoose')
+
+mongoose.Promise = global.Promise
+
+// connect to the database
+mongoose.connect(databaseConfig.url, {
+    useNewUrlParser: true
+}).then(() => {
+    console.log("Successfully connected to the database")
+}).catch(err => {
+    console.log('Could not connect to the database. Exiting now...', err)
+    process.exit()
+})
+
+// simple route
 app.get('/', (req, res) => {
-    res.send('Hello, Alex Oh!')
+    res.json({"message" : "Hello, Alex Oh!"})
 })
 
-app.listen(PORT, () => {
-    console.log(`rexy-server listening on port ${PORT}!`)
+require('./app/routes/CommentRoute.js')(app)
+
+app.listen(3000, () => {
+    console.log("rexy-server listening on port 3000!")
 })
-
-app.get('/api', (req, res) => {
-    res.status(200).json({msg : 'OK'})
-})
-
-
-
-
-
-
-
-
-
-// var mongoose = require('mongoose')
-
-// const hostname = '127.0.0.1'
-
-// const server = http.createServer((req, res) => {
-//     res.statusCode = 200
-//     res.setHeader('Content-Type', 'text/plain')
-//     res.end('Hello, Alex Oh\n')
-// })
-
-// server.listen(PORT, () => {
-//     console.log(`Server running on ${PORT}/`)
-// })
-
-// var uriString = process.env.MONGOLAB_URI || process.env.MONGOHQ_URL || 'mongodb://localhost/HelloMongoose';
-
-// mongoose.connect(uriString, function (err, res) {
-//     if (err) {
-//         console.log ('ERROR connecting to: ' + uriString + '. ' + err);
-//     } else {
-//         console.log ('Succeeded connected to: ' + uriString);
-//     }   
-// });
