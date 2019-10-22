@@ -37,7 +37,6 @@ const create = async (req, res) => {
         })
     }
 }
-module.exports = { create }
 
 
 // get
@@ -51,7 +50,6 @@ const get = async (req, res) => {
         })
     }
 }
-module.exports = { get }
 
 
 // get by id
@@ -76,7 +74,6 @@ const getById = async (req, res) => {
         })
     }
 }
-module.exports = { getById }
 
 
 // update
@@ -172,3 +169,6 @@ exports.delete = (req, res) => {
         })
     })
 }
+
+
+module.exports = { create, get, getById }
