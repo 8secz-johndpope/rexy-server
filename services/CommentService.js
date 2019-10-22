@@ -1,32 +1,30 @@
 const Comment = require('../models/Comment.js')
+const _ = require('lodash')
 
 
 // create
 const create = async (req, res) => {
-    if (!req.body.text) {
+    const { text, userId, listId, placeId } = req.body
+
+    if (!text) {
         return res.status(400).send({
             message: "Comment must have text."
         })
     }
 
-    if (!req.body.userId) {
+    if (!userId) {
         return res.status(400).send({
             message: "Comment must have a user."
         })
     }
 
-    if (!req.body.listId && !req.body.placeId) {
+    if (!listId && !placeId) {
         return res.status(400).send({
             message: "Comment must have either a list or a place."
         })
     }
 
-    const comment = new Comment({
-        listId: req.body.listId,
-        placeId: req.body.placeId,
-        text: req.body.text,
-        userId: req.body.userId
-    })
+    const comment = new Comment({ listId, placeId, text, userId })
 
     try {
         const savedComment = await comment.save()
@@ -79,13 +77,12 @@ const getById = async (req, res) => {
 // update
 const update = async (req, res) => {
     try {
-        const comment = await Comment.findByIdAndUpdate(req.params.id, {
-            $set: req.body
-            // listId: req.body.listId,
-            // placeId: req.body.placeId,
-            // text: req.body.text,
-            // userId: req.body.userId    
-        }, { new : true })
+        const comment = await Comment.findByIdAndUpdate(req.params.id, _.omitBy({
+            listId: req.body.listId,
+            placeId: req.body.placeId,
+            text: req.body.text,
+            userId: req.body.userId
+        }, _.isEmpty), { new : true })
         if (!comment) {
             return res.status(404).send({
                 message: "Comment not found with id " + req.params.id

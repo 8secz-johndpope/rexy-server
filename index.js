@@ -28,11 +28,6 @@ mongoose.connect(databaseConfig.url, {
     process.exit()
 })
 
-// simple route
-app.get('/', (req, res) => {
-    res.json({"message" : "Hello, Alex Oh!"})
-})
-
 require('./routes/CommentRoutes.js')(app)
 
 const port = process.env.PORT || 3000
