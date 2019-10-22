@@ -19,6 +19,8 @@ exports.create = (req, res) => {
         })
     }
 
+    console.log(req.body)
+
     const comment = new Comment({
         listId: req.body.listId,
         placeId: req.body.placeId,
