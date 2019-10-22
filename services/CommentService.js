@@ -48,25 +48,25 @@ exports.findAll = (req, res) => {
 }
 
 exports.findOne = (res, req) => {
-    console.log(req)
+    console.log(req.params)
 
-    Comment.findById(req.params.commentId)
+    Comment.findById(req.params.params.commentId)
     .then(comment => {
         if (!comment) {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.commentId
+                message: "Comment not found with id " + req.params.params.commentId
             })
         }
         res.send(comment)
     }).catch(err => {
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.commentId
+                message: "Comment not found with id " + req.params.params.commentId
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while retrieving Comment with id " + req.params.commentId
+            message: "An error occurred while retrieving Comment with id " + req.params.params.commentId
         })
     })
 }
