@@ -13,7 +13,7 @@ app.listen(PORT, () => {
 })
 
 app.get('/api', (req, res) => {
-    res.json(200, {msg : 'OK'})
+    res.status(200).json({msg : 'OK'})
 })
 
 
