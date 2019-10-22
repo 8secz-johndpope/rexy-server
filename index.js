@@ -6,8 +6,8 @@ const PORT = process.env.PORT || 5000
 
 app.get('/', (req, res) => res.send('Hello, Alex Oh!'))
 
-app.listen(port, () => {
-    console.log(`rexy-server listening on port ${port}!`)
+app.listen(PORT, () => {
+    console.log(`rexy-server listening on port ${PORT}!`)
 })
 
 
