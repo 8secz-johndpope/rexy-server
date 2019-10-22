@@ -5,9 +5,9 @@ module.exports = (app) => {
 
     app.get('/comments', comments.findAll)
 
-    app.get('/comments/:commentId', comments.findOne)
+    app.get('/comments/:id', comments.findOne)
 
-    app.put('/comments/:commentId', comments.update)
+    app.put('/comments/:id', comments.update)
 
-    app.delete('/comments/:commentId', comments.delete)
+    app.delete('/comments/:id', comments.delete)
 }
