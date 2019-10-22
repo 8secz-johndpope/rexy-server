@@ -78,24 +78,6 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
-    if (!req.body.text) {
-        return res.status(400).send({
-            message: "Comment must have text."
-        })
-    }
-
-    if (!req.body.userId) {
-        return res.status(400).send({
-            message: "Comment must have a user."
-        })
-    }
-
-    if (!req.body.listId && !req.body.placeId) {
-        return res.status(400).send({
-            message: "Comment must have either a list or a place."
-        })
-    }
-
     try {
         const comment = await Comment.findByIdAndUpdate(req.params.id, {
             $set: req.body
