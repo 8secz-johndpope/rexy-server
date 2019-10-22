@@ -98,10 +98,11 @@ const update = async (req, res) => {
 
     try {
         const comment = await Comment.findByIdAndUpdate(req.params.id, {
-            listId: req.body.listId,
-            placeId: req.body.placeId,
-            text: req.body.text,
-            userId: req.body.userId    
+            $set: req.body
+            // listId: req.body.listId,
+            // placeId: req.body.placeId,
+            // text: req.body.text,
+            // userId: req.body.userId    
         }, { new : true })
         if (!comment) {
             return res.status(404).send({
