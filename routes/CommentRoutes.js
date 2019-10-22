@@ -1,5 +1,5 @@
 module.exports = (app) => {
-    const comments = requires('../services/CommentService.js')
+    const comments = require('../services/CommentService.js')
 
     app.post('/comments', comments.create)
 
