@@ -82,7 +82,7 @@ const update = async (req, res) => {
             placeId: req.body.placeId,
             text: req.body.text,
             userId: req.body.userId
-        }, _.isEmpty), { new : true })
+        }, _.isUndefined), { new : true })
         if (!comment) {
             return res.status(404).send({
                 message: "Comment not found with id " + req.params.id
