@@ -41,7 +41,7 @@ const get = async (req, res) => {
 // get by id
 const getById = async (req, res) => {
     try {
-        const list = await List.findById(req.params.id).populate('places')
+        const list = await List.findById(req.params.id).populate('places', 'numberOfPlaces')
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
