@@ -9,7 +9,7 @@ const Address = mongoose.Schema({
         country: { type: String },
         state: { type: String },
         zip: { type: String },
-        formattedAddress: { type: String }
+        formatted: { type: String }
     }
 })
 
@@ -25,7 +25,7 @@ const HoursOfServiceExceptions = mongoose.Schema({
         date: { type: Date },
         hours: { type: [DailyOpenPeriod] },
         isClosed: { type: Boolean, default: false },
-        recurring: { type: String, enum: ["never", "weekly", "monthly", "yearly"], default: "never" }
+        recurring: { type: String, enum: ["never", "monthly", "yearly"], default: "never" }
     }
 })
 
