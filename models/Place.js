@@ -1,26 +1,22 @@
 const mongoose = require('mongoose')
 
 const PlaceSchema = mongoose.Schema({
-    properties: {
-        accolades: { type: [String] },
-        address: { type: Address },
-        hours: { type: HoursOfService },
-        isOpen: { type: Boolean },
-        notes: { type: String },
-        otherLists: { type: [String] },
-        phoneNumber: { type: String },
-        price: { type: Number },
-        requiresCleaning: { type: Boolean },
-        specialty: { type: String },
-        subtitle: { type: String },
-        tags: { type: [String] },
-        title: { type: String },
-        type: { type: String },
-        url: { type: String },
-    },
-    geometry: {
-        coordinate: { type: [Number], index: '2dsphere' }
-    }
+    accolades: { type: [String] },
+    address: { type: Address },
+    coordinate: { type: { type: String, default: "Point" }, coordinates: [Number], index: "2dsphere" },
+    hours: { type: HoursOfService },
+    isClean: { type: Boolean, default: false },
+    isOpen: { type: Boolean, default: true },
+    notes: { type: String },
+    otherLists: { type: [String] },
+    phoneNumber: { type: String },
+    price: { type: Number },
+    specialty: { type: String },
+    subtitle: { type: String },
+    tags: { type: [String] },
+    title: { type: String, required: true },
+    type: { type: String, required: true },
+    url: { type: String }
 }, {
     timestamps: true
 })
@@ -64,7 +60,7 @@ const SpecialHours = mongoose.Schema({
         date: { type: Date },
         hours: { type: [DailyOpenPeriod] },
         isClosed: { type: Boolean },
-        repeatsYearly: { type: Boolean }
+        isRecurring: { type: Boolean }
     }
 })
 
