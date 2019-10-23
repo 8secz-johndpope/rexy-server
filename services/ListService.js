@@ -168,7 +168,13 @@ const addPlace = async (req, res) => {
             return res.send(list)
         }
 
-        const updatedPlaceIds = list.placeIds.push(mongoose.Types.ObjectId(_id || id))
+        console.log("_id " + _id + " id " + id)
+
+        const placeId = mongoose.Types.ObjectId(_id || id)
+
+        console.log("placeId " + placeId)
+        
+        const updatedPlaceIds = list.placeIds.push(placeId)
 
         console.log("new placeIds " + updatedPlaceIds)
 
