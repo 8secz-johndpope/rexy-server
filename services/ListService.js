@@ -8,7 +8,7 @@ const create = async (req, res) => {
 
     if (!title) {
         return res.status(400).send({
-            message: "Comment must have text."
+            message: "List must have a title."
         })
     }
 
