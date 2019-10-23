@@ -140,9 +140,6 @@ const remove = async (req, res) => {
 
 // add place
 const addPlace = async (req, res) => {
-    console.log("id " + req.params.id)
-    console.log("body " + req.body._id + " " + req.body.id)
-
     const { _id, id } = req.body
 
     if (!req.params.id) {
@@ -165,18 +162,12 @@ const addPlace = async (req, res) => {
             })
         }
 
-        console.log("continue?")
-
         if (list.placeIds.includes(req.params.placeId)) {
             console.log("List already has place, no need to continue")
             return res.send(list)
         }
 
-        console.log("yes, placeIds " + list.placeIds)
-
-        const placeIds = list.placeIds.push(_id || id)
-
-        console.log("now, placeIds " + list.placeIds)
+        const placeIds = list.placeIds.push(mongoose.Types.ObjectId(_id || id))
 
         const updatedList = await List.findByIdAndUpdate(req.params.id, {
             placeIds: placeIds
