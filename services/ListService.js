@@ -17,7 +17,8 @@ const create = async (req, res) => {
     try {
         const savedList = await list.save()
         res.send(savedList)
-    } catch(err) {
+        
+    } catch (err) {
         console.log("ListService.create" + err)
 
         res.status(500).send({
@@ -32,7 +33,8 @@ const get = async (req, res) => {
     try {
         const lists = await List.find()
         res.send(lists)
-    } catch(err) {
+        
+    } catch (err) {
         console.log("ListService.get" + err)
 
         res.status(500).send({
@@ -52,7 +54,8 @@ const getById = async (req, res) => {
             })
         }
         res.send(list)
-    } catch(err) {
+
+    } catch (err) {
         console.log("ListService.getById" + req.params.id + err)
 
         if (err.kind === 'ObjectId') {
@@ -90,7 +93,8 @@ const update = async (req, res) => {
             })
         }
         res.send(list)
-    } catch(err) {
+
+    } catch (err) {
         console.log("ListService.update" + req.params.id + err)
 
         if (err.kind === 'ObjectId') {
@@ -118,7 +122,8 @@ const remove = async (req, res) => {
         res.send({
             message: "Successfully deleted List with id " + req.params.id
         })
-    } catch(err) {
+
+    } catch (err) {
         console.log("ListService.remove" + req.params.id + err)
         
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
@@ -133,4 +138,127 @@ const remove = async (req, res) => {
 }
 
 
-module.exports = { create, get, getById, update, remove }   
+// add place
+const addPlace = async (req, res) => {
+    console.log("id" + req.params.id)
+    console.log("body" + req.body)
+
+    if (!req.params.id) {
+        return res.status(400).send({
+            message: "No List id provided to add Place to."
+        })
+    }
+
+    if (!req.body._id) {
+        return res.status(400).send({
+            message: "Place does not have an id."
+        })
+    }
+
+    try {
+        const list = await List.findById(req.params.id)
+        if (!list) {
+            return res.status(404).send({
+                message: "List not found with id " + req.params.id
+            })
+        }
+
+        console.log("continue?")
+
+        if (list.placeIds.includes(req.params.placeId)) {
+            console.log("List already has place, no need to continue")
+            return res.send(list)
+        }
+
+        console.log("yes")
+
+        const placeIds = list.placeIds.push(req.body._id)
+
+        const updatedList = await List.findByIdAndUpdate(req.params.id, {
+            placeIds: placeIds
+        }, { new : true }).populate('places')
+        if (!list) {
+            return res.status(404).send({
+                message: "List not found with id " + req.params.id
+            })
+        }
+        res.send(updatedList)
+
+    } catch (err) {
+        console.log("ListService.addPlace" + req.params.id + err)
+
+        if (err.kind === 'ObjectId') {
+            return res.status(404).send({
+                message: "List not found with id " + req.params.id
+            })
+        }
+
+        return res.status(500).send({
+            message: "An error occurred while updating List with id " + req.params.id
+        })
+    }
+}
+
+
+// remove place
+const removePlace = async (req, res) => {
+    if (!req.params.id) {
+        return res.status(400).send({
+            message: "No List id provided to remove Place from."
+        })
+    }
+
+    if (!req.params.placeId) {
+        return res.status(400).send({
+            message: "No Place id provided to remove from List."
+        })
+    }
+
+    try {
+        const list = await List.findById(req.params.id)
+        if (!list) {
+            return res.status(404).send({
+                message: "List not found with id " + req.params.id
+            })
+        }
+
+        console.log("continue?")
+
+        if (!list.placeIds.includes(req.params.placeId)) {
+            console.log("List doesn't have place, no need to continue")
+            return res.send(list)
+        }
+
+        console.log("yes")
+
+        const placeIds = list.placeIds.filter(function(item) {
+            return item != req.params.placeId
+        })
+
+        const updatedList = await List.findByIdAndUpdate(req.params.id, {
+            placeIds: placeIds
+        }, { new : true }).populate('places')
+        if (!list) {
+            return res.status(404).send({
+                message: "List not found with id " + req.params.id
+            })
+        }
+        res.send(updatedList)
+
+    } catch (err) {
+        console.log("ListService.removePlace" + req.params.id + req.params.placeId + err)
+
+        if (err.kind === 'ObjectId') {
+            return res.status(404).send({
+                message: "List not found with id " + req.params.id
+            })
+        }
+
+        return res.status(500).send({
+            message: "An error occurred while updating List with id " + req.params.id
+        })
+    }
+}
+
+
+module.exports = { create, get, getById, update, remove, addPlace, removePlace }   
