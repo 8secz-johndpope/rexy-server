@@ -20,13 +20,6 @@ ListSchema.virtual('places', {
     foreignField: '_id'
 })
 
-ListSchema.virtual('numberOfPlaces', {
-    ref: 'Place',
-    localField: 'placeIds',
-    foreignField: '_id',
-    count: true
-})
-
 ListSchema.set('toObject', { virtuals: true })
 ListSchema.set('toJSON', { virtuals: true })
 
