@@ -57,7 +57,7 @@ const get = async (req, res) => {
 // get by id
 const getById = async (req, res) => {
     try {
-        const comment = await Comment.findById(req.params.id)
+        const comment = await Comment.findById(req.params.id).populate('list', 'place', 'user')
         if (!comment) {
             return res.status(404).send({
                 message: "Comment not found with id " + req.params.id
@@ -90,7 +90,7 @@ const update = async (req, res) => {
             placeId,
             text,
             userId
-        }, _.isUndefined), { new : true })
+        }, _.isUndefined), { new : true }).populate('list', 'place', 'user')
         if (!comment) {
             return res.status(404).send({
                 message: "Comment not found with id " + req.params.id
