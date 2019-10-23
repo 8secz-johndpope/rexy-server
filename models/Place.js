@@ -45,7 +45,7 @@ const HoursOfService = mongoose.Schema({
 const PlaceSchema = mongoose.Schema({
     accolades: { type: [String] },
     address: { type: Address },
-    coordinate: { type: { type: String, default: "Point" }, coordinates: [Number], index: "2dsphere" },
+    coordinate: { type: { type: String, default: "Point" }, coordinates: [Number] },
     hours: { type: HoursOfService },
     isClean: { type: Boolean, default: false },
     isOpen: { type: Boolean, default: true },
@@ -62,5 +62,7 @@ const PlaceSchema = mongoose.Schema({
 }, {
     timestamps: true
 })
+
+PlaceSchema.index({ coordinate: "2dsphere" })
 
 module.exports = mongoose.model('Place', PlaceSchema)
