@@ -18,6 +18,8 @@ const create = async (req, res) => {
         const savedList = await list.save()
         res.send(savedList)
     } catch(err) {
+        console.log(err)
+
         res.status(500).send({
             message: err.message || "An error occurred while creating the List."
         })
@@ -31,6 +33,8 @@ const get = async (req, res) => {
         const lists = await List.find()
         res.send(lists)
     } catch(err) {
+        console.log(err)
+
         res.status(500).send({
             message: err.message || "An error occurred while retrieving Lists."
         })
@@ -49,6 +53,8 @@ const getById = async (req, res) => {
         }
         res.send(list)
     } catch(err) {
+        console.log(err)
+
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
@@ -64,17 +70,19 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
+    const { accoladesYear, date, dateBasedAccolades, description, groupName, isDeleted, isPrivate, placeIds, title } = req.body
+
     try {
         const list = await List.findByIdAndUpdate(req.params.id, _.omitBy({
-            accoladesYear: req.body.accoladesYear,
-            date: req.body.date,
-            dateBasedAccolades: req.body.dateBasedAccolades,
-            description: req.body.description,
-            groupName: req.body.groupName,
-            isDeleted: req.body.isDeleted,
-            isPrivate: req.body.isPrivate,
-            placeIds: req.body.placeIds,
-            title: req.body.title
+            accoladesYear,
+            date,
+            dateBasedAccolades,
+            description,
+            groupName,
+            isDeleted,
+            isPrivate,
+            placeIds,
+            title
         }, _.isUndefined), { new : true }).populate('places')
         if (!list) {
             return res.status(404).send({
@@ -83,6 +91,8 @@ const update = async (req, res) => {
         }
         res.send(list)
     } catch(err) {
+        console.log(err)
+
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
@@ -109,6 +119,8 @@ const remove = async (req, res) => {
             message: "Successfully deleted List with id " + req.params.id
         })
     } catch(err) {
+        console.log("ListService.remove" + req.params.id + err)
+        
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id

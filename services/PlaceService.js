@@ -24,6 +24,8 @@ const create = async (req, res) => {
         const savedPlace = await place.save()
         res.send(savedPlace)
     } catch(err) {
+        console.log("PlaceService.create" + err)
+
         res.status(500).send({
             message: err.message || "An error occurred while creating the Place."
         })
@@ -37,6 +39,8 @@ const get = async (req, res) => {
         const places = await Place.find()
         res.send(places)
     } catch(err) {
+        console.log("PlaceService.get" + err)
+
         res.status(500).send({
             message: err.message || "An error occurred while retrieving Places."
         })
@@ -55,6 +59,8 @@ const getById = async (req, res) => {
         }
         res.send(place)
     } catch(err) {
+        console.log("PlaceService.getById" + req.params.id + err)
+
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
                 message: "Place not found with id " + req.params.id
@@ -98,6 +104,8 @@ const update = async (req, res) => {
         }
         res.send(place)
     } catch(err) {
+        console.log("PlaceService.update" + req.params.id + err)
+
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
                 message: "Place not found with id " + req.params.id
@@ -124,6 +132,8 @@ const remove = async (req, res) => {
             message: "Successfully deleted Place with id " + req.params.id
         })
     } catch(err) {
+        console.log("PlaceService.remove" + req.params.id + err)
+        
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
                 message: "Place not found with id " + req.params.id

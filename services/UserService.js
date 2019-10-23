@@ -18,6 +18,8 @@ const create = async (req, res) => {
         const savedUser = await user.save()
         res.send(savedUser)
     } catch(err) {
+        console.log("UserService.create" + err)
+
         res.status(500).send({
             message: err.message || "An error occurred while creating the User."
         })
@@ -31,6 +33,8 @@ const get = async (req, res) => {
         const users = await User.find()
         res.send(users)
     } catch(err) {
+        console.log("UserService.get" + err)
+
         res.status(500).send({
             message: err.message || "An error occurred while retrieving Users."
         })
@@ -49,6 +53,8 @@ const getById = async (req, res) => {
         }
         res.send(user)
     } catch(err) {
+        console.log("UserService.getById" + req.params.id + err)
+
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
@@ -64,7 +70,7 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
-    const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedListId, xid } = req.body
+    const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedPlaceIds, xid } = req.body
 
     try {
         const user = await User.findByIdAndUpdate(req.params.id, _.omitBy({
@@ -88,6 +94,8 @@ const update = async (req, res) => {
         }
         res.send(user)
     } catch(err) {
+        console.log("UserService.update" + req.params.id + err)
+
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
@@ -114,6 +122,8 @@ const remove = async (req, res) => {
             message: "Successfully deleted User with id " + req.params.id
         })
     } catch(err) {
+        console.log("UserService.remove" + req.params.id + err)
+
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
