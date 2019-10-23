@@ -168,10 +168,12 @@ const addPlace = async (req, res) => {
             return res.send(list)
         }
 
-        const placeIds = list.placeIds.push(mongoose.Types.ObjectId(_id || id))
+        const updatedPlaceIds = list.placeIds.push(mongoose.Types.ObjectId(_id || id))
+
+        console.log("new placeIds " + updatedPlaceIds)
 
         const updatedList = await List.findByIdAndUpdate(req.params.id, {
-            placeIds: placeIds
+            placeIds: updatedPlaceIds
         }, { new : true }).populate('places')
         if (!list) {
             return res.status(404).send({
