@@ -176,7 +176,7 @@ const addPlace = async (req, res) => {
 
         console.log("existing placeIds " + list.placeIds)
 
-        const updatedPlaceIds = (list.placeIds || []).push(placeId)
+        const updatedPlaceIds = /*(list.placeIds || []).push(*/[placeId]//)
 
         console.log("new placeIds " + updatedPlaceIds)
 
