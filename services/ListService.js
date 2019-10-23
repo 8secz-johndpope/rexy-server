@@ -75,7 +75,7 @@ const update = async (req, res) => {
             isPrivate: req.body.isPrivate,
             placeIds: req.body.placeIds,
             title: req.body.title
-        }, _.isUndefined), { new : true })
+        }, _.isUndefined), { new : true }).populate('places')
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id

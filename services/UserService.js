@@ -4,7 +4,7 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
-    const { bookmarksListId, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedListId, xid } = req.body
+    const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedPlaceIds, xid } = req.body
 
     if (!xid) {
         return res.status(400).send({
@@ -12,7 +12,7 @@ const create = async (req, res) => {
         })
     }
 
-    const user = new User({ bookmarksListId, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedListId, xid })
+    const user = new User({ bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedPlaceIds, xid })
 
     try {
         const savedUser = await user.save()
@@ -64,11 +64,11 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
-    const { bookmarksListId, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedListId, xid } = req.body
+    const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedListId, xid } = req.body
 
     try {
         const user = await User.findByIdAndUpdate(req.params.id, _.omitBy({
-            bookmarksListId,
+            bookmarkedPlaceIds,
             emailAddress,
             firstName,
             isVerified,
@@ -78,9 +78,9 @@ const update = async (req, res) => {
             prefersUsername,
             receiveSubscriptionNotifications,
             username,
-            visitedListId,
+            visitedPlaceIds,
             xid
-        }, _.isUndefined), { new : true })
+        }, _.isUndefined), { new : true }).populate('bookmarkedPlaces, visitedPlaces')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
