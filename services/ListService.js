@@ -19,7 +19,7 @@ const create = async (req, res) => {
         res.send(savedList)
         
     } catch (err) {
-        console.log("ListService.create" + err)
+        console.log("ListService.create " + err)
 
         res.status(500).send({
             message: err.message || "An error occurred while creating the List."
@@ -35,7 +35,7 @@ const get = async (req, res) => {
         res.send(lists)
         
     } catch (err) {
-        console.log("ListService.get" + err)
+        console.log("ListService.get " + err)
 
         res.status(500).send({
             message: err.message || "An error occurred while retrieving Lists."
@@ -56,7 +56,7 @@ const getById = async (req, res) => {
         res.send(list)
 
     } catch (err) {
-        console.log("ListService.getById" + req.params.id + err)
+        console.log("ListService.getById " + req.params.id + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -95,7 +95,7 @@ const update = async (req, res) => {
         res.send(list)
 
     } catch (err) {
-        console.log("ListService.update" + req.params.id + err)
+        console.log("ListService.update " + req.params.id + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -124,7 +124,7 @@ const remove = async (req, res) => {
         })
 
     } catch (err) {
-        console.log("ListService.remove" + req.params.id + err)
+        console.log("ListService.remove " + req.params.id + err)
         
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
@@ -140,8 +140,10 @@ const remove = async (req, res) => {
 
 // add place
 const addPlace = async (req, res) => {
-    console.log("id" + req.params.id)
-    console.log("body" + req.body)
+    console.log("id " + req.params.id)
+    console.log("body " + req.body._id + " " + req.body.id)
+
+    const { _id, id } = req.body
 
     if (!req.params.id) {
         return res.status(400).send({
@@ -149,7 +151,7 @@ const addPlace = async (req, res) => {
         })
     }
 
-    if (!req.body._id) {
+    if (!_id && !id) {
         return res.status(400).send({
             message: "Place does not have an id."
         })
@@ -170,9 +172,11 @@ const addPlace = async (req, res) => {
             return res.send(list)
         }
 
-        console.log("yes")
+        console.log("yes, placeIds " + list.placeIds)
 
-        const placeIds = list.placeIds.push(req.body._id)
+        const placeIds = list.placeIds.push(_id || id)
+
+        console.log("now, placeIds " + list.placeIds)
 
         const updatedList = await List.findByIdAndUpdate(req.params.id, {
             placeIds: placeIds
@@ -185,7 +189,7 @@ const addPlace = async (req, res) => {
         res.send(updatedList)
 
     } catch (err) {
-        console.log("ListService.addPlace" + req.params.id + err)
+        console.log("ListService.addPlace " + req.params.id + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -246,7 +250,7 @@ const removePlace = async (req, res) => {
         res.send(updatedList)
 
     } catch (err) {
-        console.log("ListService.removePlace" + req.params.id + req.params.placeId + err)
+        console.log("ListService.removePlace " + req.params.id + req.params.placeId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
