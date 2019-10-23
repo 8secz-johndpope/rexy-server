@@ -4,7 +4,7 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
-    const { bookmarksListId, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, username, visitedListId, xid } = req.body
+    const { bookmarksListId, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedListId, xid } = req.body
 
     if (!xid) {
         return res.status(400).send({
@@ -12,7 +12,7 @@ const create = async (req, res) => {
         })
     }
 
-    const user = new User({ bookmarksListId, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, username, visitedListId, xid })
+    const user = new User({ bookmarksListId, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedListId, xid })
 
     try {
         const savedUser = await user.save()
@@ -64,7 +64,7 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
-    const { bookmarksListId, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, username, visitedListId, xid } = req.body
+    const { bookmarksListId, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedListId, xid } = req.body
 
     try {
         const user = await User.findByIdAndUpdate(req.params.id, _.omitBy({
@@ -76,6 +76,7 @@ const update = async (req, res) => {
             otherLists,
             phoneNumber,
             prefersUsername,
+            receiveSubscriptionNotifications,
             username,
             visitedListId,
             xid

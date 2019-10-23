@@ -6,9 +6,9 @@ const UserSchema = mongoose.Schema({
     firstName: { type: String },    
     isVerified: { type: Boolean, default: false },
     lastName: { type: String },
-    otherLists: { type: [String] },
     phoneNumber: { type: String },
     prefersUsername: { type: Boolean, defaults: true },
+    receiveSubscriptionNotifications: { type: Boolean, default: true },
     username: { type: String, unique: true },
     visitedListId: { type: mongoose.Schema.Types.ObjectId, ref: "List" },
     xid: { type: String, required: true, unique: true }
