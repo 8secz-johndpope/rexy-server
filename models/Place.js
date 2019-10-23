@@ -21,7 +21,7 @@ const PlaceSchema = mongoose.Schema({
     timestamps: true
 })
 
-const AddressSchema = mongoose.Schema({
+const Address = mongoose.Schema({
     properties: {
         street1: { type: String },
         street2: { type: String },
@@ -43,8 +43,7 @@ const HoursOfService = mongoose.Schema({
         friday: { type: [DailyOpenPeriod] },
         saturday: { type: [DailyOpenPeriod] },
         sunday: { type: [DailyOpenPeriod] },
-        closures: { type: [Closure] },
-        specialHours: { type: [SpecialHours] }
+        exceptions: { type: [HoursOfServiceExceptions] }
     }
 })
 
@@ -55,17 +54,13 @@ const DailyOpenPeriod = mongoose.Schema({
     }
 })
 
-const SpecialHours = mongoose.Schema({
+const HoursOfServiceExceptions = mongoose.Schema({
     properties: {
         date: { type: Date },
         hours: { type: [DailyOpenPeriod] },
-        isClosed: { type: Boolean },
-        isRecurring: { type: Boolean }
+        isClosed: { type: Boolean, default: false },
+        recurring: { type: String, enum: ["never", "weekly", "monthly", "yearly"], default: "never" }
     }
 })
 
 module.exports = mongoose.model('Place', PlaceSchema)
-module.exports = mongoose.model('Address', AddressSchema)
-module.exports = mongoose.model('HoursOfService', HoursOfService)
-module.exports = mongoose.model('DailyOpenPeriod', DailyOpenPeriod)
-module.exports = mongoose.model('SpecialHours', SpecialHours)
