@@ -18,7 +18,7 @@ const create = async (req, res) => {
         const savedList = await list.save()
         res.send(savedList)
     } catch(err) {
-        console.log(err)
+        console.log("ListService.create" + err)
 
         res.status(500).send({
             message: err.message || "An error occurred while creating the List."
@@ -33,7 +33,7 @@ const get = async (req, res) => {
         const lists = await List.find()
         res.send(lists)
     } catch(err) {
-        console.log(err)
+        console.log("ListService.get" + err)
 
         res.status(500).send({
             message: err.message || "An error occurred while retrieving Lists."
@@ -53,7 +53,7 @@ const getById = async (req, res) => {
         }
         res.send(list)
     } catch(err) {
-        console.log(err)
+        console.log("ListService.getById" + req.params.id + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -91,7 +91,7 @@ const update = async (req, res) => {
         }
         res.send(list)
     } catch(err) {
-        console.log(err)
+        console.log("ListService.update" + req.params.id + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({

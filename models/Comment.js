@@ -9,4 +9,26 @@ const CommentSchema = new mongoose.Schema({
     timestamps: true
 })
 
+CommentSchema.virtual('list', {
+    ref: 'List',
+    localField: 'listId',
+    foreignField: '_id'
+})
+
+CommentSchema.virtual('place', {
+    ref: 'Place',
+    localField: 'placeId',
+    foreignField: '_id'
+})
+
+CommentSchema.virtual('user', {
+    ref: 'User',
+    localField: 'userId',
+    foreignField: '_id'
+})
+
+CommentSchema.set('toObject', { virtuals: true })
+CommentSchema.set('toJSON', { virtuals: true })
+
+
 module.exports = mongoose.model('Comment', CommentSchema)
