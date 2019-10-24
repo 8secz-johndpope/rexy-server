@@ -181,7 +181,7 @@ const addPlace = async (req, res) => {
         console.log("new placeIds " + updatedPlaceIds)
 
         const updatedList = await List.findByIdAndUpdate(req.params.id, {
-            placeIds: updatedPlaceIds
+            placeIds: placeIds
         }, { new : true }).populate('places')
         if (!list) {
             return res.status(404).send({
