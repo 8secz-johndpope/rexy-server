@@ -29,6 +29,7 @@ const create = async (req, res) => {
     try {
         const savedUserList = await userList.save()
         res.send(savedUserList)
+        
     } catch(err) {
         console.log("UserListService.create " + err)
 
@@ -44,6 +45,7 @@ const get = async (req, res) => {
     try {
         const userLists = await UserList.find()
         res.send(userLists)
+
     } catch(err) {
         console.log("UserListService.get " + err)
 
@@ -66,6 +68,7 @@ const remove = async (req, res) => {
         res.send({
             message: "Successfully deleted UserList with id " + req.params.id
         })
+
     } catch(err) {
         console.log("UserListService.remove " + req.params.id + err)
         

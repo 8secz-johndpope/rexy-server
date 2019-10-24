@@ -8,6 +8,7 @@ module.exports = (app) => {
     app.patch('/users/:id', users.update)
     app.delete('/users/:id', users.remove)
 
-    // user lists
-    // app.get('/users/:id/lists' users.getLists)
+    // user lists and subscriptions
+    app.get('/users/:id/lists', users.getLists)
+    app.get('/users/:id/subscriptions', users.getSubscriptions)
 }

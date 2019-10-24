@@ -17,7 +17,8 @@ const create = async (req, res) => {
     try {
         const savedUser = await user.save()
         res.send(savedUser)
-    } catch(err) {
+
+    } catch (err) {
         console.log("UserService.create " + err)
 
         res.status(500).send({
@@ -32,7 +33,8 @@ const get = async (req, res) => {
     try {
         const users = await User.find()
         res.send(users)
-    } catch(err) {
+
+    } catch (err) {
         console.log("UserService.get " + err)
 
         res.status(500).send({
@@ -45,14 +47,15 @@ const get = async (req, res) => {
 // get by id
 const getById = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).populate('bookmarkedPlaces, visitedPlaces')
+        const user = await User.findById(req.params.id).populate('bookmarkedPlaces').populate('visitedPlaces')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
             })
         }
         res.send(user)
-    } catch(err) {
+
+    } catch (err) {
         console.log("UserService.getById " + req.params.id + err)
 
         if (err.kind === 'ObjectId') {
@@ -86,14 +89,15 @@ const update = async (req, res) => {
             username,
             visitedPlaceIds,
             xid
-        }, _.isUndefined), { new : true }).populate('bookmarkedPlaces, visitedPlaces')
+        }, _.isUndefined), { new : true }).populate('bookmarkedPlaces').populate('visitedPlaces')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
             })
         }
         res.send(user)
-    } catch(err) {
+
+    } catch (err) {
         console.log("UserService.update " + req.params.id + err)
 
         if (err.kind === 'ObjectId') {
@@ -121,7 +125,8 @@ const remove = async (req, res) => {
         res.send({
             message: "Successfully deleted User with id " + req.params.id
         })
-    } catch(err) {
+
+    } catch (err) {
         console.log("UserService.remove " + req.params.id + err)
 
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
@@ -136,4 +141,64 @@ const remove = async (req, res) => {
 }
 
 
-module.exports = { create, get, getById, update, remove }   
+const UserList = require('../models/UserList.js')
+
+
+// user lists
+const getLists = async (req, res) => {
+    const { id } = req.params
+
+    try {
+        const userLists = await UserList.find({
+            userId: id,
+            type: "authorship"
+        }).populate({ 
+            path: 'list',
+            populate: {
+              path: 'places',
+              model: 'Place'
+            } 
+         })
+
+        const lists = userLists.map(uL => uL.list)
+        res.send(lists)
+
+    } catch (err) {
+        console.log("UserService.getLists " + req.params.id + err)
+
+        res.status(500).send({
+            message: err.message || "An error occurred while retrieving User's authored Lists."
+        })
+    }
+}
+
+
+// user subscriptions
+const getSubscriptions = async (req, res) => {
+    const { id } = req.params
+
+    try {
+        const userLists = await UserList.find({
+            userId: id,
+            type: "subscription"
+        }).populate({ 
+            path: 'list',
+            populate: {
+              path: 'places',
+              model: 'Place'
+            } 
+         })
+        const lists = userLists.map(uL => uL.list)
+        res.send(lists)
+
+    } catch (err) {
+        console.log("getSubscriptions.getLists " + req.params.id + err)
+
+        res.status(500).send({
+            message: err.message || "An error occurred while retrieving User's subscribed Lists."
+        })
+    }
+}
+
+
+module.exports = { create, get, getById, update, remove, getLists, getSubscriptions }   

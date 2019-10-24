@@ -12,13 +12,15 @@ const UserListSchema = mongoose.Schema({
 UserListSchema.virtual('list', {
     ref: 'List',
     localField: 'listId',
-    foreignField: '_id'
+    foreignField: '_id',
+    justOne: true
 })
 
 UserListSchema.virtual('user', {
     ref: 'User',
     localField: 'userId',
-    foreignField: '_id'
+    foreignField: '_id',
+    justOne: true
 })
 
 UserListSchema.set('toObject', { virtuals: true })

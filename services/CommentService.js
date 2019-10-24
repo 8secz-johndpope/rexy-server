@@ -29,6 +29,7 @@ const create = async (req, res) => {
     try {
         const savedComment = await comment.save()
         res.send(savedComment)
+
     } catch(err) {
         console.log("CommentService.create " + err)
 
@@ -44,6 +45,7 @@ const get = async (req, res) => {
     try {
         const comments = await Comment.find()
         res.send(comments)
+
     } catch(err) {
         console.log("CommentService.get " + err)
 
@@ -64,6 +66,7 @@ const getById = async (req, res) => {
             })
         }
         res.send(comment)
+
     } catch(err) {
         console.log("CommentService.getById " + req.params.id + err)
 
@@ -97,6 +100,7 @@ const update = async (req, res) => {
             })
         }
         res.send(comment)
+
     } catch(err) {
         console.log("CommentService.update " + req.params.id + err)
 
@@ -125,6 +129,7 @@ const remove = async (req, res) => {
         res.send({
             message: "Successfully deleted Comment with id " + req.params.id
         })
+        
     } catch(err) {
         console.log("CommentService.remove " + req.params.id + err)
         
