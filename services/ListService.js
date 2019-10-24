@@ -165,20 +165,11 @@ const addPlace = async (req, res) => {
 
         const placeId = mongoose.Types.ObjectId(_id || id)
         if (list.placeIds.includes(placeId)) {
-            console.log("List already has place, no need to continue")
             return res.send(list)
         }
 
-        console.log("placeId " + placeId)
-
         const placeIds = list.placeIds || []
-
-        console.log("list " + list)
-        console.log("existing placeIds " + placeIds)
-
         placeIds.addToSet(placeId)
-
-        console.log("new placeIds " + placeIds)
 
         const updatedList = await List.findByIdAndUpdate(req.params.id, {
             placeIds: placeIds
@@ -228,14 +219,9 @@ const removePlace = async (req, res) => {
             })
         }
 
-        console.log("continue?")
-
         if (!list.placeIds.includes(req.params.placeId)) {
-            console.log("List doesn't have place, no need to continue")
             return res.send(list)
         }
-
-        console.log("yes")
 
         const placeIds = list.placeIds.filter(function(item) {
             return item != req.params.placeId
