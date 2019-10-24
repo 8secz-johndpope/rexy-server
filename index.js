@@ -1,6 +1,9 @@
-// const http = require('http')
+const dotenv = require('dotenv');
 const express = require('express')
 const bodyParser = require('body-parser')
+
+// configure dotenv
+dotenv.config();
 
 // create express app
 const app = express()
