@@ -11,6 +11,7 @@ const ListSchema = mongoose.Schema({
     placeIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
     title: { type: String, required: true }
 }, {
+    id: false,
     timestamps: true
 })
 
