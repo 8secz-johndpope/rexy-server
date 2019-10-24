@@ -30,7 +30,7 @@ const create = async (req, res) => {
         const savedComment = await comment.save()
         res.send(savedComment)
     } catch(err) {
-        console.log("CommentService.create" + err)
+        console.log("CommentService.create " + err)
 
         res.status(500).send({
             message: err.message || "An error occurred while creating the Comment."
@@ -45,7 +45,7 @@ const get = async (req, res) => {
         const comments = await Comment.find()
         res.send(comments)
     } catch(err) {
-        console.log("CommentService.get" + err)
+        console.log("CommentService.get " + err)
 
         res.status(500).send({
             message: err.message || "An error occurred while retrieving Comments."
@@ -65,7 +65,7 @@ const getById = async (req, res) => {
         }
         res.send(comment)
     } catch(err) {
-        console.log("CommentService.getById" + req.params.id + err)
+        console.log("CommentService.getById " + req.params.id + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -98,7 +98,7 @@ const update = async (req, res) => {
         }
         res.send(comment)
     } catch(err) {
-        console.log("CommentService.update" + req.params.id + err)
+        console.log("CommentService.update " + req.params.id + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -126,7 +126,7 @@ const remove = async (req, res) => {
             message: "Successfully deleted Comment with id " + req.params.id
         })
     } catch(err) {
-        console.log("CommentService.remove" + req.params.id + err)
+        console.log("CommentService.remove " + req.params.id + err)
         
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({

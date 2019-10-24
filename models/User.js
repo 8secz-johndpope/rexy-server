@@ -13,6 +13,7 @@ const UserSchema = mongoose.Schema({
     visitedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place", unique: true }],
     xid: { type: String, required: true, unique: true }
 }, {
+    id: false,
     timestamps: true
 })
 

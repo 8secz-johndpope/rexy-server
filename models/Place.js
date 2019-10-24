@@ -1,45 +1,37 @@
 const mongoose = require('mongoose')
 
 const Address = mongoose.Schema({
-    properties: {
-        street1: { type: String },
-        street2: { type: String },
-        street3: { type: String },
-        city: { type: String },
-        country: { type: String },
-        state: { type: String },
-        zip: { type: String },
-        formatted: { type: String }
-    }
+    street1: { type: String },
+    street2: { type: String },
+    street3: { type: String },
+    city: { type: String },
+    country: { type: String },
+    state: { type: String },
+    zip: { type: String },
+    formatted: { type: String }
 })
 
 const DailyOpenPeriod = mongoose.Schema({
-    properties: {
-        close: { type: String },
-        open: { type: String }
-    }
+    close: { type: String },
+    open: { type: String }
 })
 
 const HoursOfServiceExceptions = mongoose.Schema({
-    properties: {
-        date: { type: Date },
-        hours: { type: [DailyOpenPeriod] },
-        isClosed: { type: Boolean, default: false },
-        recurring: { type: String, enum: ["never", "monthly", "yearly"], default: "never" }
-    }
+    date: { type: Date },
+    hours: { type: [DailyOpenPeriod] },
+    isClosed: { type: Boolean, default: false },
+    recurring: { type: String, enum: ["never", "monthly", "yearly"], default: "never" }
 })
 
 const HoursOfService = mongoose.Schema({
-    properties: {
-        monday: { type: [DailyOpenPeriod] },
-        tuesday: { type: [DailyOpenPeriod] },
-        wednesday: { type: [DailyOpenPeriod] },
-        thursday: { type: [DailyOpenPeriod] },
-        friday: { type: [DailyOpenPeriod] },
-        saturday: { type: [DailyOpenPeriod] },
-        sunday: { type: [DailyOpenPeriod] },
-        exceptions: { type: [HoursOfServiceExceptions] }
-    }
+    monday: { type: [DailyOpenPeriod] },
+    tuesday: { type: [DailyOpenPeriod] },
+    wednesday: { type: [DailyOpenPeriod] },
+    thursday: { type: [DailyOpenPeriod] },
+    friday: { type: [DailyOpenPeriod] },
+    saturday: { type: [DailyOpenPeriod] },
+    sunday: { type: [DailyOpenPeriod] },
+    exceptions: { type: [HoursOfServiceExceptions] }
 })
 
 const PlaceSchema = mongoose.Schema({
@@ -60,6 +52,7 @@ const PlaceSchema = mongoose.Schema({
     type: { type: String, required: true },
     url: { type: String }
 }, {
+    id: false,
     timestamps: true
 })
 

@@ -1,12 +1,11 @@
 const mongoose = require('mongoose')
 
 const UserListSchema = mongoose.Schema({
-    properties: {
-        listId: { type: String },
-        type: { type: String, enum: ["authorship", "subscription"] },
-        userId: { type: String }
-    }
+    listId: { type: String },
+    type: { type: String, enum: ["authorship", "subscription"] },
+    userId: { type: String }
 }, {
+    id: false,
     timestamps: true
 })
 
