@@ -174,7 +174,7 @@ const addPlace = async (req, res) => {
         const updatedList = await List.findByIdAndUpdate(req.params.id, {
             placeIds: placeIds
         }, { new : true }).populate('places')
-        if (!list) {
+        if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
             })
@@ -230,7 +230,7 @@ const removePlace = async (req, res) => {
         const updatedList = await List.findByIdAndUpdate(req.params.id, {
             placeIds: placeIds
         }, { new : true }).populate('places')
-        if (!list) {
+        if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
             })
