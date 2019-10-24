@@ -163,10 +163,7 @@ const addPlace = async (req, res) => {
             })
         }
 
-        console.log("_id " + _id + " id " + id)
-
         const placeId = mongoose.Types.ObjectId(_id || id)
-
         if (list.placeIds.includes(placeId)) {
             console.log("List already has place, no need to continue")
             return res.send(list)
@@ -174,9 +171,12 @@ const addPlace = async (req, res) => {
 
         console.log("placeId " + placeId)
 
-        console.log("existing placeIds " + list.placeIds)
+        const placeIds = list.placeIds || []
 
-        const updatedPlaceIds = /*(list.placeIds || []).push(*/[placeId]//)
+        console.log("list " + list)
+        console.log("existing placeIds " + placeIds)
+
+        placeIds.addToSet(placeId)
 
         console.log("new placeIds " + updatedPlaceIds)
 
