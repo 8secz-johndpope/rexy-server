@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 
-const Address = mongoose.Schema({
+const AddressSchema = mongoose.Schema({
     street1: { type: String },
     street2: { type: String },
     street3: { type: String },
@@ -14,7 +14,7 @@ const Address = mongoose.Schema({
     id: false
 })
 
-const DailyOpenPeriod = mongoose.Schema({
+const DailyOpenPeriodSchema = mongoose.Schema({
     close: { type: String },
     open: { type: String }
 }, {
@@ -22,9 +22,9 @@ const DailyOpenPeriod = mongoose.Schema({
     id: false
 })
 
-const HoursOfServiceExceptions = mongoose.Schema({
+const HoursOfServiceExceptionsSchema = mongoose.Schema({
     date: { type: Date },
-    hours: { type: [DailyOpenPeriod] },
+    hours: { type: [DailyOpenPeriodSchema] },
     isClosed: { type: Boolean, default: false },
     recurring: { type: String, enum: ["never", "monthly", "yearly"], default: "never" }
 }, {
@@ -32,15 +32,15 @@ const HoursOfServiceExceptions = mongoose.Schema({
     id: false
 })
 
-const HoursOfService = mongoose.Schema({
-    monday: { type: [DailyOpenPeriod] },
-    tuesday: { type: [DailyOpenPeriod] },
-    wednesday: { type: [DailyOpenPeriod] },
-    thursday: { type: [DailyOpenPeriod] },
-    friday: { type: [DailyOpenPeriod] },
-    saturday: { type: [DailyOpenPeriod] },
-    sunday: { type: [DailyOpenPeriod] },
-    exceptions: { type: [HoursOfServiceExceptions] }
+const HoursOfServiceSchema = mongoose.Schema({
+    monday: { type: [DailyOpenPeriodSchema] },
+    tuesday: { type: [DailyOpenPeriodSchema] },
+    wednesday: { type: [DailyOpenPeriodSchema] },
+    thursday: { type: [DailyOpenPeriodSchema] },
+    friday: { type: [DailyOpenPeriodSchema] },
+    saturday: { type: [DailyOpenPeriodSchema] },
+    sunday: { type: [DailyOpenPeriodSchema] },
+    exceptions: { type: [HoursOfServiceExceptionsSchema] }
 }, {
     _id: false,
     id: false
@@ -48,9 +48,9 @@ const HoursOfService = mongoose.Schema({
 
 const PlaceSchema = mongoose.Schema({
     accolades: { type: [String] },
-    address: { type: Address },
+    address: { type: AddressSchema },
     coordinate: { type: { type: String, default: "Point" }, coordinates: [Number] },
-    hours: { type: HoursOfService },
+    hours: { type: HoursOfServiceSchema },
     isClean: { type: Boolean, default: false },
     isOpen: { type: Boolean, default: true },
     notes: { type: String },

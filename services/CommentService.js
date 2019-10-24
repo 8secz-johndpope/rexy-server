@@ -4,7 +4,7 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
-    const { text, userId, listId, placeId } = req.body
+    const { listId, placeId, text, userId } = req.body
 
     if (!text) {
         return res.status(400).send({
@@ -82,7 +82,7 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
-    const { text, userId, listId, placeId } = req.body
+    const { listId, placeId, text, userId } = req.body
 
     try {
         const comment = await Comment.findByIdAndUpdate(req.params.id, _.omitBy({
