@@ -178,7 +178,7 @@ const addPlace = async (req, res) => {
 
         placeIds.addToSet(placeId)
 
-        console.log("new placeIds " + updatedPlaceIds)
+        console.log("new placeIds " + placeIds)
 
         const updatedList = await List.findByIdAndUpdate(req.params.id, {
             placeIds: placeIds
