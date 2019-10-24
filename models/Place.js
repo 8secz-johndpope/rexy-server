@@ -9,11 +9,17 @@ const Address = mongoose.Schema({
     state: { type: String },
     zip: { type: String },
     formatted: { type: String }
+}, {
+    _id: false,
+    id: false
 })
 
 const DailyOpenPeriod = mongoose.Schema({
     close: { type: String },
     open: { type: String }
+}, {
+    _id: false,
+    id: false
 })
 
 const HoursOfServiceExceptions = mongoose.Schema({
@@ -21,6 +27,9 @@ const HoursOfServiceExceptions = mongoose.Schema({
     hours: { type: [DailyOpenPeriod] },
     isClosed: { type: Boolean, default: false },
     recurring: { type: String, enum: ["never", "monthly", "yearly"], default: "never" }
+}, {
+    _id: false,
+    id: false
 })
 
 const HoursOfService = mongoose.Schema({
@@ -32,6 +41,9 @@ const HoursOfService = mongoose.Schema({
     saturday: { type: [DailyOpenPeriod] },
     sunday: { type: [DailyOpenPeriod] },
     exceptions: { type: [HoursOfServiceExceptions] }
+}, {
+    _id: false,
+    id: false
 })
 
 const PlaceSchema = mongoose.Schema({
@@ -57,5 +69,8 @@ const PlaceSchema = mongoose.Schema({
 })
 
 PlaceSchema.index({ coordinate: "2dsphere" })
+
+PlaceSchema.set('toObject', { virtuals: true })
+PlaceSchema.set('toJSON', { virtuals: true })
 
 module.exports = mongoose.model('Place', PlaceSchema)
