@@ -54,16 +54,21 @@ const getById = async (req, res) => {
             const user = await User.find({
                 xid: req.params.id
             }).populate('bookmarkedPlaces').populate('visitedPlaces')
-        } else {
+            if (!user) {
+                return res.status(404).send({
+                    message: "User not found with id " + req.params.id
+                })
+            }
+            res.send(user)
+            } else {
             const user = await User.findById(req.params.id).populate('bookmarkedPlaces').populate('visitedPlaces')
-        }
-
-        if (!user) {
-            return res.status(404).send({
-                message: "User not found with id " + req.params.id
-            })
-        }
-        res.send(user)
+            if (!user) {
+                return res.status(404).send({
+                    message: "User not found with id " + req.params.id
+                })
+            }
+            res.send(user)
+            }
 
     } catch (err) {
         console.log("UserService.getById " + req.params.id + err)
