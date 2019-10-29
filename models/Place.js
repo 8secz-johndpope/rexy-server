@@ -5,9 +5,9 @@ const AddressSchema = mongoose.Schema({
     street2: { type: String },
     street3: { type: String },
     city: { type: String },
-    country: { type: String },
     state: { type: String },
     zip: { type: String },
+    country: { type: String },
     formatted: { type: String }
 }, {
     _id: false,
