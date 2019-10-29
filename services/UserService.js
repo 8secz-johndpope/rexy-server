@@ -1,3 +1,4 @@
+const url = require('url');
 const User = require('../models/User.js')
 const _ = require('lodash')
 const mongoose = require('mongoose')
@@ -47,10 +48,12 @@ const get = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
-    const { type } = req.body
+    const query = url.parse(req.url, true).query
+
+    console.log("query " + query)
 
     try {
-        if (type === "xid") {
+        if (query["type"] === "xid") {
             const user = await User.find({
                 xid: req.params.id
             }).populate('bookmarkedPlaces').populate('visitedPlaces')
