@@ -50,8 +50,6 @@ const get = async (req, res) => {
 const getById = async (req, res) => {
     const query = url.parse(req.url, true).query
 
-    console.log("query " + query)
-
     try {
         if (query["type"] === "xid") {
             const user = await User.find({
