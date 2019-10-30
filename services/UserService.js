@@ -60,16 +60,16 @@ const getById = async (req, res) => {
                     message: "User not found with id " + req.params.id
                 })
             }
-            res.send(user)
-            } else {
+            res.send(user[0])
+        } else {
             const user = await User.findById(req.params.id).populate('bookmarkedPlaces').populate('visitedPlaces')
             if (!user) {
                 return res.status(404).send({
                     message: "User not found with id " + req.params.id
                 })
             }
-            res.send(user)
-            }
+            res.send(user[0])
+        }
 
     } catch (err) {
         console.log("UserService.getById " + req.params.id + err)
