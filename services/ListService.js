@@ -287,7 +287,7 @@ const addSubscriber = async (req, res) => {
             const savedUserList = await newUserList.save()
             console.log("UserService.addSubscriber savedUserList " + savedUserList)
         }
-        
+
         var list = await List.findById(listId).populate('places')
         const userLists = await UserList.find({
             listId
@@ -298,11 +298,11 @@ const addSubscriber = async (req, res) => {
             })
         }
 
-        list.authors = userLists.filter(function(type) {
-            return type === "authorship"
+        list.authors = userLists.filter(function(uL) {
+            return uL.type === "authorship"
         }).map(uL => uL.user)
-        list.subscribers = userLists.filter(function(type) {
-            return type === "subscription"
+        list.subscribers = userLists.filter(function(uL) {
+            return uL.type === "subscription"
         }).map(uL => uL.user)
 
         console.log("UserService.addSubscriber list.authors " + list.authors)
