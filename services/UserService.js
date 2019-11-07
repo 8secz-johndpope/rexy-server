@@ -1,5 +1,6 @@
 const url = require('url');
 const User = require('../models/User.js')
+const UserList = require('../models/UserList.js')
 const _ = require('lodash')
 const mongoose = require('mongoose')
 
@@ -155,9 +156,6 @@ const remove = async (req, res) => {
         })
     }
 }
-
-
-const UserList = require('../models/UserList.js')
 
 
 // user lists

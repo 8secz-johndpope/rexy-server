@@ -1,4 +1,5 @@
 const List = require('../models/List.js')
+const UserList = require('../models/UserList.js')
 const _ = require('lodash')
 const mongoose = require('mongoose')
 
@@ -253,4 +254,78 @@ const removePlace = async (req, res) => {
 }
 
 
-module.exports = { create, get, getById, update, remove, addPlace, removePlace }   
+// add subscriber
+const addSubscriber = async (req, res) => {
+    const { _id, id } = req.body
+
+    if (!req.params.id) {
+        return res.status(400).send({
+            message: "No List id provided to add subscriber to."
+        })
+    }
+
+    if (!_id && !id) {
+        return res.status(400).send({
+            message: "Subscriber does not have an id."
+        })
+    }
+
+    const listId = req.params.id
+    const type = "subscription"
+    const userId = _id || id
+
+    try {
+        const userList = await UserList.find({
+            listId,
+            type,
+            userId
+        }).populate()
+
+        console.log("UserService.addSubscriber userList " + userList)
+
+        if (!userList) {
+            const newUserList = new UserList({ listId, type, userId })
+            console.log("UserService.addSubscriber newUserList " + newUserList)
+
+            const savedUserList = await newUserList.save()
+            console.log("UserService.addSubscriber savedUserList " + savedUserList)
+        }
+        const list = await List.findById(listId).populate('places')
+        console.log("UserService.addSubscriber list " + list)
+
+        const subscriberUserLists = await UserList.find({
+            type,
+            listId
+        }).populate('user')
+        console.log("UserService.addSubscriber subscriberUserLists " + subscriberUserLists)
+
+        if (!list) {
+            return res.status(404).send({
+                message: "List not found with id " + req.params.id
+            })
+        }
+
+        list.subscribers = subscriberUserLists.map(uL => uL.user)
+        console.log("UserService.addSubscriber list.subscribers " + list)
+
+        res.send(list)
+
+    } catch (err) {
+        console.log("UserService.addSubscriber " + req.params.id + req.body + err)
+        
+        return res.status(500).send({
+            message: "An error occurred while subscribing to List with id " + req.params.id
+        })
+    }
+}
+
+
+// remove subscriber
+const removeSubscriber = async (req, res) => {
+    return res.status(500).send({
+        message: "An error occurred while unsubscribing from List with id " + req.params.id
+    })
+}
+
+
+module.exports = { create, get, getById, update, remove, addPlace, removePlace, addSubscriber, removeSubscriber }   

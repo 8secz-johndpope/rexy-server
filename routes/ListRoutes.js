@@ -11,4 +11,8 @@ module.exports = (app) => {
     // places on lists
     app.post('/lists/:id/places', lists.addPlace)
     app.delete('/lists/:id/places/:placeId', lists.removePlace)
+
+    // subscriptions
+    app.post('/lists/:id/subscribers', lists.addSubscriber)
+    app.delete('/lists/:id/subscribers/:userId', lists.removeSubscriber)
 }
