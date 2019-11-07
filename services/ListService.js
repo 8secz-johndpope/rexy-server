@@ -290,7 +290,7 @@ const addSubscriber = async (req, res) => {
             const savedUserList = await newUserList.save()
             console.log("UserService.addSubscriber savedUserList " + savedUserList)
         }
-        const list = await List.findById(listId).populate('places')
+        var list = await List.findById(listId).populate('places')
         console.log("UserService.addSubscriber list " + list)
 
         const subscriberUserLists = await UserList.find({
@@ -306,7 +306,7 @@ const addSubscriber = async (req, res) => {
         }
 
         list.subscribers = subscriberUserLists.map(uL => uL.user)
-        console.log("UserService.addSubscriber list.subscribers " + list)
+        console.log("UserService.addSubscriber list.subscribers " + list.subscribers)
 
         res.send(list)
 
