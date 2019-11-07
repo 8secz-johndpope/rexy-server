@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 
 const ListSchema = mongoose.Schema({
     accoladesYear: { type: String },
+    authors: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     date: { type: Date, default: Date.now },
     dateBasedAccolades: { type: Boolean, default: false },
     description: { type: String },
@@ -9,6 +10,7 @@ const ListSchema = mongoose.Schema({
     isDeleted: { type: Boolean, default: false },
     isPrivate: { type: Boolean, default: false },
     placeIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
+    subscribers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     title: { type: String, required: true }
 }, {
     id: false,
