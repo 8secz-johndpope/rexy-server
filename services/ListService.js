@@ -280,7 +280,11 @@ const addSubscriber = async (req, res) => {
             type,
             userId
         }).populate()
+        console.log("UserService.addSubscriber userList " + userList)
+
         if (!userList) {
+            console.log("NO USER LIST")
+
             const newUserList = new UserList({ listId, type, userId })
             console.log("UserService.addSubscriber newUserList " + newUserList)
 
@@ -304,9 +308,6 @@ const addSubscriber = async (req, res) => {
         list.subscribers = userLists.filter(function(uL) {
             return uL.type === "subscription"
         }).map(uL => uL.user)
-
-        console.log("UserService.addSubscriber list.authors " + list.authors)
-        console.log("UserService.addSubscriber list.subscribers " + list.subscribers)
 
         res.send(list)
 
