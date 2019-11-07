@@ -55,6 +55,17 @@ const getById = async (req, res) => {
                 message: "List not found with id " + req.params.id
             })
         }
+
+        const userLists = await UserList.find({
+            listId: req.params.id
+        }).populate('user')
+        list.authors = userLists.filter(function(uL) {
+            return uL.type === "authorship"
+        }).map(uL => uL.user)
+        list.subscribers = userLists.filter(function(uL) {
+            return uL.type === "subscription"
+        }).map(uL => uL.user)
+
         res.send(list)
 
     } catch (err) {
@@ -275,33 +286,26 @@ const addSubscriber = async (req, res) => {
     const userId = _id || id
 
     try {
-        const userList = await UserList.find({
+        const existingUserLists = await UserList.find({
             listId,
             type,
             userId
         })
-        console.log("UserService.addSubscriber userList " + userList)
-
-        if (!userList) {
-            console.log("NO USER LIST")
-
+        if (!existingUserLists[0]) {
             const newUserList = new UserList({ listId, type, userId })
-            console.log("UserService.addSubscriber newUserList " + newUserList)
-
             const savedUserList = await newUserList.save()
-            console.log("UserService.addSubscriber savedUserList " + savedUserList)
         }
 
-        var list = await List.findById(listId).populate('places')
-        const userLists = await UserList.find({
-            listId
-        }).populate('user')
+        const list = await List.findById(listId).populate('places')
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
             })
         }
 
+        const userLists = await UserList.find({
+            listId
+        }).populate('user')
         list.authors = userLists.filter(function(uL) {
             return uL.type === "authorship"
         }).map(uL => uL.user)
@@ -323,9 +327,64 @@ const addSubscriber = async (req, res) => {
 
 // remove subscriber
 const removeSubscriber = async (req, res) => {
-    return res.status(500).send({
-        message: "An error occurred while unsubscribing from List with id " + req.params.id
-    })
+    if (!req.params.id) {
+        return res.status(400).send({
+            message: "No List id provided to remove subscribed User from."
+        })
+    }
+
+    if (!req.params.userId) {
+        return res.status(400).send({
+            message: "User to remove from subscribers does not have an id."
+        })
+    }
+
+    const listId = req.params.id
+    const type = "subscription"
+    const userId = req.params.userId
+
+    try {
+        const existingUserLists = await UserList.find({
+            listId,
+            type,
+            userId
+        })
+        if (existingUserLists[0]) {
+            const userList = existingUserLists[0]
+            const deletedUserList = await UserList.findByIdAndDelete(userList._id || userList.id)
+            if (!deletedUserList) {
+                return res.status(404).send({
+                    message: "List not found with id " + req.params.id
+                })
+            }
+        }
+
+        const list = await List.findById(listId).populate('places')
+        if (!list) {
+            return res.status(404).send({
+                message: "List not found with id " + req.params.id
+            })
+        }
+
+        const userLists = await UserList.find({
+            listId
+        }).populate('user')
+        list.authors = userLists.filter(function(uL) {
+            return uL.type === "authorship"
+        }).map(uL => uL.user)
+        list.subscribers = userLists.filter(function(uL) {
+            return uL.type === "subscription"
+        }).map(uL => uL.user)
+
+        res.send(list)
+
+    } catch (err) {
+        console.log("UserService.removeSubscriber " + req.params.id + req.body + err)
+
+        return res.status(500).send({
+            message: "An error occurred while unsubscribing to List with id " + req.params.id
+        })
+    }
 }
 
 

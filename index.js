@@ -21,6 +21,8 @@ const mongoose = require('mongoose')
 
 mongoose.Promise = global.Promise
 
+console.log("databaseConfig.url + " + databaseConfig.url)
+
 // connect to the database
 mongoose.connect(databaseConfig.url, {
     useNewUrlParser: true
