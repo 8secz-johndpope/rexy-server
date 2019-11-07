@@ -280,9 +280,6 @@ const addSubscriber = async (req, res) => {
             type,
             userId
         }).populate()
-
-        console.log("UserService.addSubscriber userList " + userList)
-
         if (!userList) {
             const newUserList = new UserList({ listId, type, userId })
             console.log("UserService.addSubscriber newUserList " + newUserList)
@@ -290,14 +287,11 @@ const addSubscriber = async (req, res) => {
             const savedUserList = await newUserList.save()
             console.log("UserService.addSubscriber savedUserList " + savedUserList)
         }
+        
         var list = await List.findById(listId).populate('places')
-        console.log("UserService.addSubscriber list " + list)
-
         const userLists = await UserList.find({
             listId
         }).populate('user')
-        console.log("UserService.addSubscriber subscriberUserLists " + subscriberUserLists)
-
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
@@ -310,7 +304,7 @@ const addSubscriber = async (req, res) => {
         list.subscribers = userLists.filter(function(type) {
             return type === "subscription"
         }).map(uL => uL.user)
-        
+
         console.log("UserService.addSubscriber list.authors " + list.authors)
         console.log("UserService.addSubscriber list.subscribers " + list.subscribers)
 
