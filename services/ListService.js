@@ -279,7 +279,7 @@ const addSubscriber = async (req, res) => {
             listId,
             type,
             userId
-        }).populate()
+        })
         console.log("UserService.addSubscriber userList " + userList)
 
         if (!userList) {
