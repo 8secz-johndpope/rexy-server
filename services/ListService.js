@@ -293,8 +293,7 @@ const addSubscriber = async (req, res) => {
         var list = await List.findById(listId).populate('places')
         console.log("UserService.addSubscriber list " + list)
 
-        const subscriberUserLists = await UserList.find({
-            type,
+        const userLists = await UserList.find({
             listId
         }).populate('user')
         console.log("UserService.addSubscriber subscriberUserLists " + subscriberUserLists)
@@ -305,7 +304,14 @@ const addSubscriber = async (req, res) => {
             })
         }
 
-        list.subscribers = subscriberUserLists.map(uL => uL.user)
+        list.authors = userLists.filter(function(type) {
+            return type === "authorship"
+        }).map(uL => uL.user)
+        list.subscribers = userLists.filter(function(type) {
+            return type === "subscription"
+        }).map(uL => uL.user)
+        
+        console.log("UserService.addSubscriber list.authors " + list.authors)
         console.log("UserService.addSubscriber list.subscribers " + list.subscribers)
 
         res.send(list)
