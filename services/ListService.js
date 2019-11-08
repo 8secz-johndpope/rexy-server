@@ -105,6 +105,17 @@ const update = async (req, res) => {
                 message: "List not found with id " + req.params.id
             })
         }
+
+        const userLists = await UserList.find({
+            listId: req.params.id
+        }).populate('user')
+        list.authors = userLists.filter(function(uL) {
+            return uL.type === "authorship"
+        }).map(uL => uL.user)
+        list.subscribers = userLists.filter(function(uL) {
+            return uL.type === "subscription"
+        }).map(uL => uL.user)
+
         res.send(list)
 
     } catch (err) {
@@ -191,6 +202,17 @@ const addPlace = async (req, res) => {
                 message: "List not found with id " + req.params.id
             })
         }
+
+        const userLists = await UserList.find({
+            listId: req.params.id
+        }).populate('user')
+        updatedList.authors = userLists.filter(function(uL) {
+            return uL.type === "authorship"
+        }).map(uL => uL.user)
+        updatedList.subscribers = userLists.filter(function(uL) {
+            return uL.type === "subscription"
+        }).map(uL => uL.user)
+
         res.send(updatedList)
 
     } catch (err) {
@@ -247,6 +269,17 @@ const removePlace = async (req, res) => {
                 message: "List not found with id " + req.params.id
             })
         }
+        
+        const userLists = await UserList.find({
+            listId: req.params.id
+        }).populate('user')
+        updatedList.authors = userLists.filter(function(uL) {
+            return uL.type === "authorship"
+        }).map(uL => uL.user)
+        updatedList.subscribers = userLists.filter(function(uL) {
+            return uL.type === "subscription"
+        }).map(uL => uL.user)
+
         res.send(updatedList)
 
     } catch (err) {

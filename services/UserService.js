@@ -53,15 +53,28 @@ const getById = async (req, res) => {
 
     try {
         if (query["type"] === "xid") {
-            const user = await User.find({
+            const users = await User.find({
                 xid: req.params.id
             }).populate('bookmarkedPlaces').populate('visitedPlaces')
-            if (!user[0]) {
+            const user = users[0]
+            if (!user) {
                 return res.status(404).send({
                     message: "User not found with id " + req.params.id
                 })
             }
-            res.send(user[0])
+
+            const userLists = await UserList.find({
+                listId
+            }).populate('user')
+            user.lists = userLists.filter(function(uL) {
+                return uL.type === "authorship"
+            }).map(uL => uL.user)
+            user.subscribedLists = userLists.filter(function(uL) {
+                return uL.type === "subscription"
+            }).map(uL => uL.user)    
+            
+            res.send(user)
+
         } else {
             const user = await User.findById(req.params.id).populate('bookmarkedPlaces').populate('visitedPlaces')
             if (!user) {

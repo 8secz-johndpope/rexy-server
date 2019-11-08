@@ -1,16 +1,18 @@
 const mongoose = require('mongoose')
 
 const UserSchema = mongoose.Schema({
-    bookmarkedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place", unique: true }],
+    bookmarkedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
     emailAddress: { type: String },
     firstName: { type: String },    
     isVerified: { type: Boolean, default: false },
     lastName: { type: String },
-    phoneNumber: { type: String },
+    lists: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
+    phoneNumber: { type: String, unique: true },
     prefersUsername: { type: Boolean, defaults: true },
     receiveSubscriptionNotifications: { type: Boolean, default: true },
+    subscribedLists: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
     username: { type: String, unique: true },
-    visitedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place", unique: true }],
+    visitedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
     xid: { type: String, required: true, unique: true }
 }, {
     id: false,
