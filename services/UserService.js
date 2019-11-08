@@ -162,9 +162,27 @@ const remove = async (req, res) => {
 // user lists
 const getLists = async (req, res) => {
     const { id } = req.params
-        
+
     try {
-        const user = await User.findById(id).populate('lists')
+        const user = await User.findById(id).populate({
+            path: 'lists',
+            populate: {
+                path: 'authors',
+                model: 'User'
+            }
+        }).populate({
+            path: 'lists',
+            populate: {
+                path: 'places',
+                model: 'Place'
+            }
+        }).populate({
+            path: 'lists',
+            populate: {
+                path: 'subscribers',
+                model: 'User'
+            }
+        })
         res.send(user.lists)
 
     } catch (err) {
@@ -182,7 +200,25 @@ const getSubscriptions = async (req, res) => {
     const { id } = req.params
 
     try {
-        const user = await User.findById(id).populate('subscribedLists')
+        const user = await User.findById(id).populate({
+            path: 'subscribedLists',
+            populate: {
+                path: 'authors',
+                model: 'User'
+            }
+        }).populate({
+            path: 'subscribedLists',
+            populate: {
+                path: 'places',
+                model: 'Place'
+            }
+        }).populate({
+            path: 'subscribedLists',
+            populate: {
+                path: 'subscribers',
+                model: 'User'
+            }
+        })
         res.send(user.subscribedLists)
 
     } catch (err) {
