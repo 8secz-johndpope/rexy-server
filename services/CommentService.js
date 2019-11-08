@@ -43,7 +43,7 @@ const create = async (req, res) => {
 // get
 const get = async (req, res) => {
     try {
-        const comments = await Comment.find()
+        const comments = await Comment.find().populate('list', 'place', 'user')
         res.send(comments)
 
     } catch(err) {
@@ -58,26 +58,28 @@ const get = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
+    const commentId = req.params.id
+
     try {
-        const comment = await Comment.findById(req.params.id).populate('list', 'place', 'user')
+        const comment = await Comment.findById(commentId).populate('list', 'place', 'user')
         if (!comment) {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.id
+                message: "Comment not found with id " + commentId
             })
         }
         res.send(comment)
 
     } catch(err) {
-        console.log("CommentService.getById " + req.params.id + err)
+        console.log("CommentService.getById " + commentId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.id
+                message: "Comment not found with id " + commentId
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while retrieving Comment with id " + req.params.id
+            message: "An error occurred while retrieving Comment with id " + commentId
         })
     }
 }
@@ -85,10 +87,11 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
+    const commentId = req.params.id
     const { listId, placeId, text, userId } = req.body
 
     try {
-        const comment = await Comment.findByIdAndUpdate(req.params.id, _.omitBy({
+        const comment = await Comment.findByIdAndUpdate(commentId, _.omitBy({
             listId,
             placeId,
             text,
@@ -96,22 +99,22 @@ const update = async (req, res) => {
         }, _.isUndefined), { new : true }).populate('list', 'place', 'user')
         if (!comment) {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.id
+                message: "Comment not found with id " + commentId
             })
         }
         res.send(comment)
 
     } catch(err) {
-        console.log("CommentService.update " + req.params.id + err)
+        console.log("CommentService.update " + commentId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.id
+                message: "Comment not found with id " + commentId
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while updating Comment with id " + req.params.id
+            message: "An error occurred while updating Comment with id " + commentId
         })
     }
 }
@@ -119,27 +122,29 @@ const update = async (req, res) => {
 
 // delete
 const remove = async (req, res) => {
+    const commentId = req.params.id
+
     try {
-        const comment = await Comment.findByIdAndDelete(req.params.id)
+        const comment = await Comment.findByIdAndDelete(commentId)
         if (!comment) {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.id
+                message: "Comment not found with id " + commentId
             })
         }
         res.send({
-            message: "Successfully deleted Comment with id " + req.params.id
+            message: "Successfully deleted Comment with id " + commentId
         })
         
     } catch(err) {
-        console.log("CommentService.remove " + req.params.id + err)
+        console.log("CommentService.remove " + commentId + err)
         
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
-                message: "Comment not found with id " + req.params.id
+                message: "Comment not found with id " + commentId
             })
         }
         return res.status(500).send({
-            message: "An error occurred while deleting Comment with id " + req.params.id
+            message: "An error occurred while deleting Comment with id " + commentId
         })
     }
 }
