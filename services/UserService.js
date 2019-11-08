@@ -1,6 +1,5 @@
 const url = require('url');
 const User = require('../models/User.js')
-const UserList = require('../models/UserList.js')
 const _ = require('lodash')
 const mongoose = require('mongoose')
 
@@ -55,44 +54,22 @@ const getById = async (req, res) => {
         if (query["type"] === "xid") {
             const users = await User.find({
                 xid: req.params.id
-            }).select('-xid').populate('bookmarkedPlaces').populate('visitedPlaces')
+            }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
             const user = users[0]
             if (!user) {
                 return res.status(404).send({
                     message: "User not found with id " + req.params.id
                 })
             }
-
-            const userLists = await UserList.find({
-                userId: user.id
-            }).populate('list')
-            user.lists = userLists.filter(function(uL) {
-                return uL.type === "authorship"
-            }).map(uL => uL.list)
-            user.subscribedLists = userLists.filter(function(uL) {
-                return uL.type === "subscription"
-            }).map(uL => uL.list)    
-
             res.send(user)
 
         } else {
-            const user = await User.findById(req.params.id).select('-xid').populate('bookmarkedPlaces').populate('visitedPlaces')
+            const user = await User.findById(req.params.id).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
             if (!user) {
                 return res.status(404).send({
                     message: "User not found with id " + req.params.id
                 })
             }
-
-            const userLists = await UserList.find({
-                userId: req.params.id
-            }).populate('list')
-            user.lists = userLists.filter(function(uL) {
-                return uL.type === "authorship"
-            }).map(uL => uL.list)
-            user.subscribedLists = userLists.filter(function(uL) {
-                return uL.type === "subscription"
-            }).map(uL => uL.list)    
-
             res.send(user)
         }
 
@@ -130,23 +107,12 @@ const update = async (req, res) => {
             username,
             visitedPlaceIds,
             xid
-        }, _.isUndefined), { new : true }).select('-xid').populate('bookmarkedPlaces').populate('visitedPlaces')
+        }, _.isUndefined), { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
             })
         }
-
-        const userLists = await UserList.find({
-            userId: user.id
-        }).populate('list')
-        user.lists = userLists.filter(function(uL) {
-            return uL.type === "authorship"
-        }).map(uL => uL.list)
-        user.subscribedLists = userLists.filter(function(uL) {
-            return uL.type === "subscription"
-        }).map(uL => uL.list)    
-
         res.send(user)
 
     } catch (err) {
@@ -196,21 +162,10 @@ const remove = async (req, res) => {
 // user lists
 const getLists = async (req, res) => {
     const { id } = req.params
-
+        
     try {
-        const userLists = await UserList.find({
-            userId: id,
-            type: "authorship"
-        }).populate({ 
-            path: 'list',
-            populate: {
-              path: 'places',
-              model: 'Place'
-            } 
-         })
-
-        const lists = userLists.map(uL => uL.list)
-        res.send(lists)
+        const user = await User.findById(id).populate('lists')
+        res.send(user.lists)
 
     } catch (err) {
         console.log("UserService.getLists " + req.params.id + err)
@@ -227,18 +182,8 @@ const getSubscriptions = async (req, res) => {
     const { id } = req.params
 
     try {
-        const userLists = await UserList.find({
-            userId: id,
-            type: "subscription"
-        }).populate({ 
-            path: 'list',
-            populate: {
-              path: 'places',
-              model: 'Place'
-            } 
-         })
-        const lists = userLists.map(uL => uL.list)
-        res.send(lists)
+        const user = await User.findById(id).populate('subscribedLists')
+        res.send(user.subscribedLists)
 
     } catch (err) {
         console.log("getSubscriptions.getLists " + req.params.id + err)
@@ -284,23 +229,12 @@ const addBookmark = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(req.params.id, {
             bookmarkedPlaceIds: placeIds
-        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('visitedPlaces')
+        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
             })
         }
-
-        const userLists = await UserList.find({
-            userId: user.id
-        }).populate('list')
-        updatedUser.lists = userLists.filter(function(uL) {
-            return uL.type === "authorship"
-        }).map(uL => uL.list)
-        updatedUser.subscribedLists = userLists.filter(function(uL) {
-            return uL.type === "subscription"
-        }).map(uL => uL.list)    
-
         res.send(updatedUser)
 
     } catch (err) {
@@ -351,23 +285,12 @@ const removeBookmark = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(req.params.id, {
             bookmarkedPlaceIds
-        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('visitedPlaces')
+        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
             })
         }
-
-        const userLists = await UserList.find({
-            userId: user.id
-        }).populate('list')
-        updatedUser.lists = userLists.filter(function(uL) {
-            return uL.type === "authorship"
-        }).map(uL => uL.list)
-        updatedUser.subscribedLists = userLists.filter(function(uL) {
-            return uL.type === "subscription"
-        }).map(uL => uL.list)    
-
         res.send(updatedUser)
 
     } catch (err) {
@@ -420,23 +343,12 @@ const addVisited = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(req.params.id, {
             visitedPlaceIds: placeIds
-        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('visitedPlaces')
+        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
             })
         }
-
-        const userLists = await UserList.find({
-            userId: user.id
-        }).populate('list')
-        updatedUser.lists = userLists.filter(function(uL) {
-            return uL.type === "authorship"
-        }).map(uL => uL.list)
-        updatedUser.subscribedLists = userLists.filter(function(uL) {
-            return uL.type === "subscription"
-        }).map(uL => uL.list)    
-
         res.send(updatedUser)
 
     } catch (err) {
@@ -487,23 +399,12 @@ const removeVisited = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(req.params.id, {
             visitedPlaceIds: placeIds
-        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('visitedPlaces')
+        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
             })
         }
-
-        const userLists = await UserList.find({
-            userId: user.id
-        }).populate('list')
-        updatedUser.lists = userLists.filter(function(uL) {
-            return uL.type === "authorship"
-        }).map(uL => uL.list)
-        updatedUser.subscribedLists = userLists.filter(function(uL) {
-            return uL.type === "subscription"
-        }).map(uL => uL.list)    
-
         res.send(updatedUser)
 
     } catch (err) {

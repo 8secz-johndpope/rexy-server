@@ -1,5 +1,5 @@
+const url = require('url');
 const List = require('../models/List.js')
-const UserList = require('../models/UserList.js')
 const _ = require('lodash')
 const mongoose = require('mongoose')
 
@@ -33,7 +33,7 @@ const create = async (req, res) => {
 // get
 const get = async (req, res) => {
     try {
-        const lists = await List.find()
+        const lists = await List.find().populate('authors').populate('places').populate('subscribers')
         res.send(lists)
         
     } catch (err) {
@@ -49,23 +49,12 @@ const get = async (req, res) => {
 // get by id
 const getById = async (req, res) => {
     try {
-        const list = await List.findById(req.params.id).populate('places')
+        const list = await List.findById(req.params.id).populate('authors').populate('places').populate('subscribers')
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
             })
         }
-
-        const userLists = await UserList.find({
-            listId: req.params.id
-        }).populate('user')
-        list.authors = userLists.filter(function(uL) {
-            return uL.type === "authorship"
-        }).map(uL => uL.user)
-        list.subscribers = userLists.filter(function(uL) {
-            return uL.type === "subscription"
-        }).map(uL => uL.user)
-
         res.send(list)
 
     } catch (err) {
@@ -99,23 +88,12 @@ const update = async (req, res) => {
             isPrivate,
             placeIds,
             title
-        }, _.isUndefined), { new : true }).populate('places')
+        }, _.isUndefined), { new : true }).populate('authors').populate('places').populate('subscribers')
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
             })
         }
-
-        const userLists = await UserList.find({
-            listId: req.params.id
-        }).populate('user')
-        list.authors = userLists.filter(function(uL) {
-            return uL.type === "authorship"
-        }).map(uL => uL.user)
-        list.subscribers = userLists.filter(function(uL) {
-            return uL.type === "subscription"
-        }).map(uL => uL.user)
-
         res.send(list)
 
     } catch (err) {
@@ -195,24 +173,13 @@ const addPlace = async (req, res) => {
         placeIds.addToSet(placeId)
 
         const updatedList = await List.findByIdAndUpdate(req.params.id, {
-            placeIds: placeIds
-        }, { new : true }).populate('places')
+            placeIds
+        }, { new : true }).populate('authors').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
             })
         }
-
-        const userLists = await UserList.find({
-            listId: req.params.id
-        }).populate('user')
-        updatedList.authors = userLists.filter(function(uL) {
-            return uL.type === "authorship"
-        }).map(uL => uL.user)
-        updatedList.subscribers = userLists.filter(function(uL) {
-            return uL.type === "subscription"
-        }).map(uL => uL.user)
-
         res.send(updatedList)
 
     } catch (err) {
@@ -262,24 +229,13 @@ const removePlace = async (req, res) => {
         })
 
         const updatedList = await List.findByIdAndUpdate(req.params.id, {
-            placeIds: placeIds
-        }, { new : true }).populate('places')
+            placeIds
+        }, { new : true }).populate('authors').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
             })
         }
-        
-        const userLists = await UserList.find({
-            listId: req.params.id
-        }).populate('user')
-        updatedList.authors = userLists.filter(function(uL) {
-            return uL.type === "authorship"
-        }).map(uL => uL.user)
-        updatedList.subscribers = userLists.filter(function(uL) {
-            return uL.type === "subscription"
-        }).map(uL => uL.user)
-
         res.send(updatedList)
 
     } catch (err) {
@@ -314,39 +270,31 @@ const addSubscriber = async (req, res) => {
         })
     }
 
-    const listId = req.params.id
-    const type = "subscription"
-    const userId = _id || id
-
     try {
-        const existingUserLists = await UserList.find({
-            listId,
-            type,
-            userId
-        })
-        if (!existingUserLists[0]) {
-            const newUserList = new UserList({ listId, type, userId })
-            const savedUserList = await newUserList.save()
-        }
-
-        const list = await List.findById(listId).populate('places')
+        const list = await List.findById(req.params.id).populate('authors').populate('places').populate('subscribers')
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
             })
         }
 
-        const userLists = await UserList.find({
-            listId
-        }).populate('user')
-        list.authors = userLists.filter(function(uL) {
-            return uL.type === "authorship"
-        }).map(uL => uL.user)
-        list.subscribers = userLists.filter(function(uL) {
-            return uL.type === "subscription"
-        }).map(uL => uL.user)
+        const userId = mongoose.Types.ObjectId(_id || id)
+        if (list.subscriberIds.includes(userId)) {
+            return res.send(list)
+        }
 
-        res.send(list)
+        const subscriberIds = list.subscriberIds || []
+        subscriberIds.addToSet(userId)
+
+        const updatedList = await List.findByIdAndUpdate(req.params.id, {
+            subscriberIds
+        }, { new : true }).populate('authors').populate('places').populate('subscribers')
+        if (!updatedList) {
+            return res.status(404).send({
+                message: "List not found with id " + req.params.id
+            })
+        }
+        res.send(updatedList)
 
     } catch (err) {
         console.log("UserService.addSubscriber " + req.params.id + req.body + err)
@@ -372,44 +320,31 @@ const removeSubscriber = async (req, res) => {
         })
     }
 
-    const listId = req.params.id
-    const type = "subscription"
-    const userId = req.params.userId
-
     try {
-        const existingUserLists = await UserList.find({
-            listId,
-            type,
-            userId
-        })
-        if (existingUserLists[0]) {
-            const userList = existingUserLists[0]
-            const deletedUserList = await UserList.findByIdAndDelete(userList._id || userList.id)
-            if (!deletedUserList) {
-                return res.status(404).send({
-                    message: "List not found with id " + req.params.id
-                })
-            }
-        }
-
-        const list = await List.findById(listId).populate('places')
+        const list = await List.findById(req.params.id).populate('authors').populate('places').populate('subscribers')
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + req.params.id
             })
         }
 
-        const userLists = await UserList.find({
-            listId
-        }).populate('user')
-        list.authors = userLists.filter(function(uL) {
-            return uL.type === "authorship"
-        }).map(uL => uL.user)
-        list.subscribers = userLists.filter(function(uL) {
-            return uL.type === "subscription"
-        }).map(uL => uL.user)
+        if (!list.subscriberIds.includes(req.params.userId)) {
+            return res.send(list)
+        }
 
-        res.send(list)
+        const subscriberIds = list.subscriberIds.filter(function(id) {
+            return id != req.params.id
+        })
+
+        const updatedList = await List.findByIdAndUpdate(req.params.id, {
+            subscriberIds
+        }, { new : true }).populate('authors').populate('places').populate('subscribers')
+        if (!updatedList) {
+            return res.status(404).send({
+                message: "List not found with id " + req.params.id
+            })
+        }
+        res.send(updatedList)
 
     } catch (err) {
         console.log("UserService.removeSubscriber " + req.params.id + req.body + err)

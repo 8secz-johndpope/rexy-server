@@ -6,11 +6,11 @@ const UserSchema = mongoose.Schema({
     firstName: { type: String },    
     isVerified: { type: Boolean, default: false },
     lastName: { type: String },
-    lists: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
+    listIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
     phoneNumber: { type: String, unique: true },
     prefersUsername: { type: Boolean, defaults: true },
     receiveSubscriptionNotifications: { type: Boolean, default: true },
-    subscribedLists: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
+    subscribedListIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
     username: { type: String, unique: true },
     visitedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
     xid: { type: String, required: true, unique: true }
@@ -22,6 +22,18 @@ const UserSchema = mongoose.Schema({
 UserSchema.virtual('bookmarkedPlaces', {
     ref: 'Place',
     localField: 'bookmarkedPlaceIds',
+    foreignField: '_id'
+})
+
+UserSchema.virtual('lists', {
+    ref: 'List',
+    localField: 'listIds',
+    foreignField: '_id'
+})
+
+UserSchema.virtual('subscribedLists', {
+    ref: 'List',
+    localField: 'subscribedListIds',
     foreignField: '_id'
 })
 

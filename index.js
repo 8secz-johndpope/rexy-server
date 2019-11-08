@@ -36,7 +36,6 @@ mongoose.connect(databaseConfig.url, {
 require('./routes/CommentRoutes.js')(app)
 require('./routes/ListRoutes.js')(app)
 require('./routes/PlaceRoutes.js')(app)
-require('./routes/UserListRoutes.js')(app)
 require('./routes/UserRoutes.js')(app)
 
 const port = process.env.PORT || 3000
