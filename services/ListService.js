@@ -34,7 +34,7 @@ const create = async (req, res) => {
 // get
 const get = async (req, res) => {
     try {
-        const lists = await List.find().populate('authors').populate('places').populate('subscribers')
+        const lists = await List.find()
         res.send(lists)
         
     } catch (err) {
@@ -52,7 +52,7 @@ const getById = async (req, res) => {
     const listId = req.params.id
 
     try {
-        const list = await List.findById(listId).populate('authors').populate('places').populate('subscribers')
+        const list = await List.findById(listId)
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + listId
@@ -284,7 +284,7 @@ const addSubscriber = async (req, res) => {
     }
 
     try {
-        const list = await List.findById(listId).populate('authors').populate('places').populate('subscribers')
+        const list = await List.findById(listId)
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + listId
@@ -349,7 +349,7 @@ const removeSubscriber = async (req, res) => {
     }
 
     try {
-        const list = await List.findById(listId).populate('authors').populate('places').populate('subscribers')
+        const list = await List.findById(listId)
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + listId

@@ -33,7 +33,7 @@ const create = async (req, res) => {
 // get
 const get = async (req, res) => {
     try {
-        const users = await User.find()
+        const users = await User.find().select('-xid')
         res.send(users)
 
     } catch (err) {
@@ -64,7 +64,7 @@ const getById = async (req, res) => {
             res.send(user)
 
         } else {
-            const user = await User.findById(req.params.id).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+            const user = await User.findById(req.params.id).select('-xid')
             if (!user) {
                 return res.status(404).send({
                     message: "User not found with id " + req.params.id
@@ -183,7 +183,7 @@ const getLists = async (req, res) => {
                 model: 'User'
             }
         })
-        res.send(user.lists)
+        res.send(user.lists || [])
 
     } catch (err) {
         console.log("UserService.getLists " + req.params.id + err)
@@ -219,7 +219,7 @@ const getSubscriptions = async (req, res) => {
                 model: 'User'
             }
         })
-        res.send(user.subscribedLists)
+        res.send(user.subscribedLists || [])
 
     } catch (err) {
         console.log("getSubscriptions.getLists " + req.params.id + err)
@@ -248,7 +248,7 @@ const addBookmark = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(req.params.id)
+        const user = await User.findById(req.params.id).select('-xid')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
@@ -304,7 +304,7 @@ const removeBookmark = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(req.params.id)
+        const user = await User.findById(req.params.id).select('-xid')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
@@ -362,7 +362,7 @@ const addVisited = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(req.params.id)
+        const user = await User.findById(req.params.id).select('-xid')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
@@ -418,7 +418,7 @@ const removeVisited = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(req.params.id)
+        const user = await User.findById(req.params.id).select('-xid')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id

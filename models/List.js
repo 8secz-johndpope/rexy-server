@@ -35,6 +35,10 @@ ListSchema.virtual('subscribers', {
     foreignField: '_id'
 })
 
+ListSchema.pre('findOne', function() {
+    this.populate('authors').populate('places').populate('subscribers')
+})
+
 ListSchema.set('toObject', { virtuals: true })
 ListSchema.set('toJSON', { virtuals: true })
 
