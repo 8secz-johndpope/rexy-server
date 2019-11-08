@@ -344,14 +344,14 @@ const removeBookmark = async (req, res) => {
         if (!user.bookmarkedPlaceIds.includes(req.params.placeId)) {
             return res.send(user)
         }
-
-        const placeIds = user.bookmarkedPlaceIds.filter(function(item) {
+        
+        const bookmarkedPlaceIds = user.bookmarkedPlaceIds.filter(function(item) {
             return item != req.params.placeId
-        })
+        }) || []
 
         const updatedUser = await User.findByIdAndUpdate(req.params.id, {
-            bookmarkedPlaceIds: placeIds
-        }, { new : true }).populate('places')
+            bookmarkedPlaceIds
+        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + req.params.id
@@ -360,7 +360,7 @@ const removeBookmark = async (req, res) => {
 
         const userLists = await UserList.find({
             userId: user.id
-        }).select('-xid').populate('bookmarkedPlaces').populate('visitedPlaces')
+        }).populate('list')
         updatedUser.lists = userLists.filter(function(uL) {
             return uL.type === "authorship"
         }).map(uL => uL.list)
