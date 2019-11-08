@@ -64,15 +64,15 @@ const getById = async (req, res) => {
             }
 
             const userLists = await UserList.find({
-                listId
-            }).populate('user')
+                userId: user.id
+            }).populate('list')
             user.lists = userLists.filter(function(uL) {
                 return uL.type === "authorship"
-            }).map(uL => uL.user)
+            }).map(uL => uL.list)
             user.subscribedLists = userLists.filter(function(uL) {
                 return uL.type === "subscription"
-            }).map(uL => uL.user)    
-            
+            }).map(uL => uL.list)    
+
             res.send(user)
 
         } else {
@@ -82,6 +82,17 @@ const getById = async (req, res) => {
                     message: "User not found with id " + req.params.id
                 })
             }
+
+            const userLists = await UserList.find({
+                userId: req.params.id
+            }).populate('list')
+            user.lists = userLists.filter(function(uL) {
+                return uL.type === "authorship"
+            }).map(uL => uL.list)
+            user.subscribedLists = userLists.filter(function(uL) {
+                return uL.type === "subscription"
+            }).map(uL => uL.list)    
+
             res.send(user)
         }
 
@@ -125,6 +136,17 @@ const update = async (req, res) => {
                 message: "User not found with id " + req.params.id
             })
         }
+
+        const userLists = await UserList.find({
+            userId: user.id
+        }).populate('list')
+        user.lists = userLists.filter(function(uL) {
+            return uL.type === "authorship"
+        }).map(uL => uL.list)
+        user.subscribedLists = userLists.filter(function(uL) {
+            return uL.type === "subscription"
+        }).map(uL => uL.list)    
+
         res.send(user)
 
     } catch (err) {
@@ -268,6 +290,17 @@ const addBookmark = async (req, res) => {
                 message: "User not found with id " + req.params.id
             })
         }
+
+        const userLists = await UserList.find({
+            userId: user.id
+        }).populate('list')
+        updatedUser.lists = userLists.filter(function(uL) {
+            return uL.type === "authorship"
+        }).map(uL => uL.list)
+        updatedUser.subscribedLists = userLists.filter(function(uL) {
+            return uL.type === "subscription"
+        }).map(uL => uL.list)    
+
         res.send(updatedUser)
 
     } catch (err) {
@@ -324,6 +357,17 @@ const removeBookmark = async (req, res) => {
                 message: "User not found with id " + req.params.id
             })
         }
+
+        const userLists = await UserList.find({
+            userId: user.id
+        }).populate('list')
+        updatedUser.lists = userLists.filter(function(uL) {
+            return uL.type === "authorship"
+        }).map(uL => uL.list)
+        updatedUser.subscribedLists = userLists.filter(function(uL) {
+            return uL.type === "subscription"
+        }).map(uL => uL.list)    
+
         res.send(updatedUser)
 
     } catch (err) {
@@ -382,6 +426,17 @@ const addVisited = async (req, res) => {
                 message: "User not found with id " + req.params.id
             })
         }
+
+        const userLists = await UserList.find({
+            userId: user.id
+        }).populate('list')
+        updatedUser.lists = userLists.filter(function(uL) {
+            return uL.type === "authorship"
+        }).map(uL => uL.list)
+        updatedUser.subscribedLists = userLists.filter(function(uL) {
+            return uL.type === "subscription"
+        }).map(uL => uL.list)    
+
         res.send(updatedUser)
 
     } catch (err) {
@@ -438,6 +493,17 @@ const removeVisited = async (req, res) => {
                 message: "User not found with id " + req.params.id
             })
         }
+
+        const userLists = await UserList.find({
+            userId: user.id
+        }).populate('list')
+        updatedUser.lists = userLists.filter(function(uL) {
+            return uL.type === "authorship"
+        }).map(uL => uL.list)
+        updatedUser.subscribedLists = userLists.filter(function(uL) {
+            return uL.type === "subscription"
+        }).map(uL => uL.list)    
+        
         res.send(updatedUser)
 
     } catch (err) {
