@@ -35,6 +35,10 @@ ListSchema.virtual('subscribers', {
     foreignField: '_id'
 })
 
+ListSchema.pre('find', function() {
+    this.populate('authors')
+})
+
 ListSchema.pre('findOne', function() {
     this.populate('authors').populate('places').populate('subscribers')
 })
