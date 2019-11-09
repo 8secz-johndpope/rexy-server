@@ -1,6 +1,5 @@
 const mongoose = require('mongoose')
 const mongoosastic = require('mongoosastic')
-const elasticsearch = require('elasticsearch');
 
 const AddressSchema = mongoose.Schema({
     street1: { type: String },

@@ -1,6 +1,7 @@
 const List = require('../models/List.js')
 const User = require('../models/User.js')
 const mongoose = require('mongoose')
+const url = require('url');
 const _ = require('lodash')
 
 
@@ -142,6 +143,32 @@ const remove = async (req, res) => {
             message: "An error occurred while deleting List with id " + listId
         })
     }
+}
+
+
+// search
+const search = async (req, res) => {
+    const query = url.parse(req.url, true).query
+    var terms = query["query"]
+
+    if (!terms) {
+        return res.status(500).send({
+            message: "An error occurred while searching for Places "
+        })
+    }
+
+    if (!terms.endsWith("*")) {
+        terms += "*"
+    }
+
+    List.search({ query_string: { query: terms }}, { hydrate: true }, function (err, results) {
+        if (err) {
+            return res.status(500).send({
+                message: err.message || "An error occurred while searching for Lists."
+            })
+        }
+        res.send(results.hits.hits)
+    })
 }
 
 
@@ -397,4 +424,4 @@ const removeSubscriber = async (req, res) => {
 }
 
 
-module.exports = { create, get, getById, update, remove, addPlace, removePlace, addSubscriber, removeSubscriber }
+module.exports = { create, get, getById, update, remove, search, addPlace, removePlace, addSubscriber, removeSubscriber }

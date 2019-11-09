@@ -8,5 +8,6 @@ module.exports = (app) => {
     app.patch('/places/:id', places.update)
     app.delete('/places/:id', places.remove)
 
+    // search
     app.get('/search/places', places.search)
 }

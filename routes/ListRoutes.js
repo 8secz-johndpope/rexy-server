@@ -8,6 +8,9 @@ module.exports = (app) => {
     app.patch('/lists/:id', lists.update)
     app.delete('/lists/:id', lists.remove)
 
+    // search
+    app.get('/search/lists', lists.search)
+
     // places on lists
     app.post('/lists/:id/places', lists.addPlace)
     app.delete('/lists/:id/places/:placeId', lists.removePlace)

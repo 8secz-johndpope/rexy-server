@@ -154,29 +154,28 @@ const remove = async (req, res) => {
 
 // search
 const search = async (req, res) => {
-    const q = url.parse(req.url, true).query
-    const terms = q["query"]
-    console.log("terms " + terms)
+    const query = url.parse(req.url, true).query
+    var terms = query["query"]
 
-    if (terms) {
-        Place.search({ query_string: { query: terms }}, { hydrate: true }, function (err, results) {
-            if (err) {
-                console.log("err " + err)
-                return res.status(500).send({
-                    message: err.message || "An error occurred while searching for Places."
-                })
-            }
-
-            console.log("results " + results)
-            res.send(results.hits.hits)
-        })
-
-    } else {
+    if (!terms) {
         return res.status(500).send({
             message: "An error occurred while searching for Places "
         })
     }
+
+    if (!terms.endsWith("*")) {
+        terms += "*"
+    }
+
+    Place.search({ query_string: { query: terms }}, { hydrate: true }, function (err, results) {
+        if (err) {
+            return res.status(500).send({
+                message: err.message || "An error occurred while searching for Places."
+            })
+        }
+        res.send(results.hits.hits)
+    })
 }
 
 
-module.exports = { create, get, getById, update, remove, search }   
+module.exports = { create, get, getById, update, remove, search }
