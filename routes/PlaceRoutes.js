@@ -7,4 +7,6 @@ module.exports = (app) => {
     app.get('/places/:id', places.getById)
     app.patch('/places/:id', places.update)
     app.delete('/places/:id', places.remove)
+
+    app.get('/search/places', places.search)
 }

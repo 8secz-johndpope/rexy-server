@@ -1,4 +1,5 @@
 const Place = require('../models/Place.js')
+const url = require('url');
 const _ = require('lodash')
 
 
@@ -151,4 +152,31 @@ const remove = async (req, res) => {
 }
 
 
-module.exports = { create, get, getById, update, remove }   
+// search
+const search = async (req, res) => {
+    const q = url.parse(req.url, true).query
+    const terms = q["query"]
+    console.log("terms " + terms)
+
+    if (terms) {
+        Place.search({ query_string: { query: terms }}, { hydrate: true }, function (err, results) {
+            if (err) {
+                console.log("err " + err)
+                return res.status(500).send({
+                    message: err.message || "An error occurred while searching for Places."
+                })
+            }
+
+            console.log("results " + results)
+            res.send(results.hits.hits)
+        })
+
+    } else {
+        return res.status(500).send({
+            message: "An error occurred while searching for Places "
+        })
+    }
+}
+
+
+module.exports = { create, get, getById, update, remove, search }   

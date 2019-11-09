@@ -1,7 +1,7 @@
-const url = require('url');
 const User = require('../models/User.js')
-const _ = require('lodash')
 const mongoose = require('mongoose')
+const url = require('url');
+const _ = require('lodash')
 
 
 // create

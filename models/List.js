@@ -1,17 +1,18 @@
 const mongoose = require('mongoose')
+const mongoosastic = require('mongoosastic')
 
 const ListSchema = mongoose.Schema({
     accoladesYear: { type: String },
     authorIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     date: { type: Date, default: Date.now },
     dateBasedAccolades: { type: Boolean, default: false },
-    description: { type: String },
+    description: { type: String, es_indexed: true },
     groupName: { type: String },
     isDeleted: { type: Boolean, default: false },
     isPrivate: { type: Boolean, default: false },
     placeIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
     subscriberIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    title: { type: String, required: true }
+    title: { type: String, required: true, es_indexed: true }
 }, {
     id: false,
     timestamps: true
@@ -45,5 +46,7 @@ ListSchema.pre('findOne', function() {
 
 ListSchema.set('toObject', { virtuals: true })
 ListSchema.set('toJSON', { virtuals: true })
+
+ListSchema.plugin(mongoosastic)
 
 module.exports = mongoose.model('List', ListSchema)
