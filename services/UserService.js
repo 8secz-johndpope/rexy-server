@@ -58,7 +58,7 @@ const getById = async (req, res) => {
             const user = users[0]
             if (!user) {
                 return res.status(404).send({
-                    message: "User not found with id " + req.params.id
+                    message: "User not found with xid " + req.params.id
                 })
             }
             res.send(user)
@@ -458,4 +458,4 @@ const removeVisited = async (req, res) => {
     }
 }
 
-module.exports = { create, get, getById, update, remove, getLists, getSubscriptions, addBookmark, removeBookmark, addVisited, removeVisited }   
+module.exports = { create, get, getById, update, remove, getLists, getSubscriptions, addBookmark, removeBookmark, addVisited, removeVisited }
