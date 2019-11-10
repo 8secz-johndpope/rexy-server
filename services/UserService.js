@@ -6,7 +6,7 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
-    const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedPlaceIds, xid } = req.body
+    const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, phoneNumber, prefersUsername, receiveSubscriptionNotifications, subscribedListIds, username, visitedPlaceIds, xid } = req.body
 
     if (!xid) {
         return res.status(400).send({
@@ -14,7 +14,7 @@ const create = async (req, res) => {
         })
     }
 
-    const user = new User({ bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedPlaceIds, xid })
+    const user = new User({ bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, phoneNumber, prefersUsername, receiveSubscriptionNotifications, subscribedListIds, username, visitedPlaceIds, xid })
 
     try {
         const savedUser = await user.save()
@@ -49,41 +49,42 @@ const get = async (req, res) => {
 // get by id
 const getById = async (req, res) => {
     const query = url.parse(req.url, true).query
+    const userId = req.params.id
 
     try {
         if (query["type"] === "xid") {
             const users = await User.find({
-                xid: req.params.id
+                xid: userId
             }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
             const user = users[0]
             if (!user) {
                 return res.status(404).send({
-                    message: "User not found with xid " + req.params.id
+                    message: "User not found with xid " + userId
                 })
             }
             res.send(user)
 
         } else {
-            const user = await User.findById(req.params.id).select('-xid')
+            const user = await User.findById(userId).select('-xid')
             if (!user) {
                 return res.status(404).send({
-                    message: "User not found with id " + req.params.id
+                    message: "User not found with id " + userId
                 })
             }
             res.send(user)
         }
 
     } catch (err) {
-        console.log("UserService.getById " + req.params.id + err)
+        console.log("UserService.getById " + userId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while retrieving User with id " + req.params.id
+            message: "An error occurred while retrieving User with id " + userId
         })
     }
 }
@@ -91,41 +92,43 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
-    const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, otherLists, phoneNumber, prefersUsername, receiveSubscriptionNotifications, username, visitedPlaceIds, xid } = req.body
+    const userId = req.params.id
+    const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, phoneNumber, prefersUsername, receiveSubscriptionNotifications, subscribedListIds, username, visitedPlaceIds, xid } = req.body
 
     try {
-        const user = await User.findByIdAndUpdate(req.params.id, _.omitBy({
+        const user = await User.findByIdAndUpdate(userId, _.omitBy({
             bookmarkedPlaceIds,
             emailAddress,
             firstName,
             isVerified,
             lastName,
-            otherLists,
+            listIds,
             phoneNumber,
             prefersUsername,
             receiveSubscriptionNotifications,
+            subscribedListIds,
             username,
             visitedPlaceIds,
             xid
         }, _.isUndefined), { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!user) {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
         res.send(user)
 
     } catch (err) {
-        console.log("UserService.update " + req.params.id + err)
+        console.log("UserService.update " + userId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while updating User with id " + req.params.id
+            message: "An error occurred while updating User with id " + userId
         })
     }
 }
@@ -133,27 +136,29 @@ const update = async (req, res) => {
 
 // delete
 const remove = async (req, res) => {
+    const userId = req.params.id
+
     try {
-        const user = await User.findByIdAndDelete(req.params.id)
+        const user = await User.findByIdAndDelete(userId)
         if (!user) {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
         res.send({
-            message: "Successfully deleted User with id " + req.params.id
+            message: "Successfully deleted User with id " + userId
         })
 
     } catch (err) {
-        console.log("UserService.remove " + req.params.id + err)
+        console.log("UserService.remove " + userId + err)
 
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
         return res.status(500).send({
-            message: "An error occurred while deleting User with id " + req.params.id
+            message: "An error occurred while deleting User with id " + userId
         })
     }
 }
@@ -161,10 +166,10 @@ const remove = async (req, res) => {
 
 // user lists
 const getLists = async (req, res) => {
-    const { id } = req.params
+    const userId = req.params.id
 
     try {
-        const user = await User.findById(id).populate({
+        const user = await User.findById(userId).populate({
             path: 'lists',
             populate: {
                 path: 'authors',
@@ -186,7 +191,7 @@ const getLists = async (req, res) => {
         res.send(user.lists || [])
 
     } catch (err) {
-        console.log("UserService.getLists " + req.params.id + err)
+        console.log("UserService.getLists " + userId + err)
 
         res.status(500).send({
             message: err.message || "An error occurred while retrieving User's authored Lists."
@@ -197,10 +202,10 @@ const getLists = async (req, res) => {
 
 // user subscriptions
 const getSubscriptions = async (req, res) => {
-    const { id } = req.params
+    const userId = req.params.id
 
     try {
-        const user = await User.findById(id).populate({
+        const user = await User.findById(userId).populate({
             path: 'subscribedLists',
             populate: {
                 path: 'authors',
@@ -222,7 +227,7 @@ const getSubscriptions = async (req, res) => {
         res.send(user.subscribedLists || [])
 
     } catch (err) {
-        console.log("getSubscriptions.getLists " + req.params.id + err)
+        console.log("getSubscriptions.getLists " + userId + err)
 
         res.status(500).send({
             message: err.message || "An error occurred while retrieving User's subscribed Lists."
@@ -233,29 +238,30 @@ const getSubscriptions = async (req, res) => {
 
 // add bookmark
 const addBookmark = async (req, res) => {
+    const userId = req.params.id
     const { _id, id } = req.body
+    const placeId = _id || id
 
-    if (!req.params.id) {
+    if (!userId) {
         return res.status(400).send({
             message: "No User id provided to add bookmarked Place to."
         })
     }
 
-    if (!_id && !id) {
+    if (!placeId) {
         return res.status(400).send({
             message: "Place to bookmark does not have an id."
         })
     }
 
     try {
-        const user = await User.findById(req.params.id).select('-xid')
+        const user = await User.findById(userId).select('-xid')
         if (!user) {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
 
-        const placeId = mongoose.Types.ObjectId(_id || id)
         if (user.bookmarkedPlaceIds.includes(placeId)) {
             return res.send(user)
         }
@@ -263,27 +269,27 @@ const addBookmark = async (req, res) => {
         const placeIds = user.bookmarkedPlaceIds || []
         placeIds.addToSet(placeId)
 
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, {
+        const updatedUser = await User.findByIdAndUpdate(userId, {
             bookmarkedPlaceIds: placeIds
         }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
         res.send(updatedUser)
 
     } catch (err) {
-        console.log("UserService.addBookmark " + req.params.id + err)
+        console.log("UserService.addBookmark " + userId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while adding a bookmarked Place to User with id " + req.params.id
+            message: "An error occurred while adding a bookmarked Place to User with id " + userId
         })
     }
 }
@@ -291,55 +297,58 @@ const addBookmark = async (req, res) => {
 
 // delete bookmark
 const removeBookmark = async (req, res) => {
-    if (!req.params.id) {
+    const userId = req.params.id
+    const placeId = req.params.placeId
+
+    if (!userId) {
         return res.status(400).send({
             message: "No User id provided to remove bookmarked Place from."
         })
     }
 
-    if (!req.params.placeId) {
+    if (!placeId) {
         return res.status(400).send({
             message: "Place to remove from bookmarks does not have an id."
         })
     }
 
     try {
-        const user = await User.findById(req.params.id).select('-xid')
+        const user = await User.findById(userId).select('-xid')
         if (!user) {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
 
-        if (!user.bookmarkedPlaceIds.includes(req.params.placeId)) {
+        if (!user.bookmarkedPlaceIds.includes(placeId)) {
             return res.send(user)
         }
         
         const bookmarkedPlaceIds = user.bookmarkedPlaceIds.filter(function(item) {
-            return item != req.params.placeId
+            return item != placeId
         }) || []
 
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, {
+        const updatedUser = await User.findByIdAndUpdate(userId, {
             bookmarkedPlaceIds
         }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
         res.send(updatedUser)
 
     } catch (err) {
-        console.log("ListService.removeBookmark " + req.params.id + req.params.placeId + err)
+        console.log("ListService.removeBookmark " + userId + placeId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while removing a bookmarked Place from User with id " + req.params.id
+            message: "An error occurred while removing a bookmarked Place from User with id " + userId
         })
     }
 }
@@ -347,29 +356,30 @@ const removeBookmark = async (req, res) => {
 
 // add visited
 const addVisited = async (req, res) => {
+    const userId = req.params.id
     const { _id, id } = req.body
+    const placeId = _id || id
 
-    if (!req.params.id) {
+    if (!userId) {
         return res.status(400).send({
             message: "No User id provided to add visited Place to."
         })
     }
 
-    if (!_id && !id) {
+    if (!placeId) {
         return res.status(400).send({
             message: "Place to mark as visited does not have an id."
         })
     }
 
     try {
-        const user = await User.findById(req.params.id).select('-xid')
+        const user = await User.findById(userId).select('-xid')
         if (!user) {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
 
-        const placeId = mongoose.Types.ObjectId(_id || id)
         if (user.visitedPlaceIds.includes(placeId)) {
             return res.send(user)
         }
@@ -377,27 +387,27 @@ const addVisited = async (req, res) => {
         const placeIds = user.visitedPlaceIds || []
         placeIds.addToSet(placeId)
 
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, {
+        const updatedUser = await User.findByIdAndUpdate(userId, {
             visitedPlaceIds: placeIds
         }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
         res.send(updatedUser)
 
     } catch (err) {
-        console.log("UserService.addVisited " + req.params.id + err)
+        console.log("UserService.addVisited " + userId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while marking a Place as visited on User with id " + req.params.id
+            message: "An error occurred while marking a Place as visited on User with id " + userId
         })
     }
 }
@@ -405,55 +415,58 @@ const addVisited = async (req, res) => {
 
 // delete visited
 const removeVisited = async (req, res) => {
-    if (!req.params.id) {
+    const userId = req.params.id
+    const placeId = req.params.placeId
+
+    if (!userId) {
         return res.status(400).send({
             message: "No User id provided to remove visited Place from."
         })
     }
 
-    if (!req.params.placeId) {
+    if (!placeId) {
         return res.status(400).send({
             message: "Place to remove from visited does not have an id."
         })
     }
 
     try {
-        const user = await User.findById(req.params.id).select('-xid')
+        const user = await User.findById(userId).select('-xid')
         if (!user) {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
 
-        if (!user.visitedPlaceIds.includes(req.params.placeId)) {
+        if (!user.visitedPlaceIds.includes(placeId)) {
             return res.send(user)
         }
 
         const placeIds = user.visitedPlaceIds.filter(function(item) {
-            return item != req.params.placeId
+            return item != placeId
         })
 
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, {
+        const updatedUser = await User.findByIdAndUpdate(userId, {
             visitedPlaceIds: placeIds
         }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
         res.send(updatedUser)
 
     } catch (err) {
-        console.log("ListService.removeVisited " + req.params.id + req.params.placeId + err)
+        console.log("ListService.removeVisited " + userId + placeId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "User not found with id " + req.params.id
+                message: "User not found with id " + userId
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while removing a visited Place from User with id " + req.params.id
+            message: "An error occurred while removing a visited Place from User with id " + userId
         })
     }
 }

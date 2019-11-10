@@ -198,7 +198,6 @@ const addPlace = async (req, res) => {
             })
         }
 
-        const placeId = mongoose.Types.ObjectId(placeId)
         if (list.placeIds.includes(placeId)) {
             return res.send(list)
         }

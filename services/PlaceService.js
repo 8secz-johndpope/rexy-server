@@ -167,6 +167,9 @@ const search = async (req, res) => {
         terms += "*"
     }
 
+    var coordinate = query["coordinate"]
+    var radius = query["radius"]
+    
     Place.search({ query_string: { query: terms }}, { hydrate: true }, function (err, results) {
         if (err) {
             return res.status(500).send({
