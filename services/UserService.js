@@ -1,5 +1,4 @@
 const User = require('../models/User.js')
-const mongoose = require('mongoose')
 const url = require('url');
 const _ = require('lodash')
 
