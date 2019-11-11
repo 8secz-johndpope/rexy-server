@@ -51,13 +51,11 @@ const getById = async (req, res) => {
     const userId = req.params.id
 
     try {
-        if (query["type"] === "xid") {
+        if (query.type === "xid") {
             console.log("getById xid " + userId)
-            const users = await User.find({
+            const user = await User.findOne({
                 xid: userId
             }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
-            console.log("users " + users)
-            const user = users[0]
             console.log("user " + user)
             if (!user) {
                 return res.status(404).send({

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 
-const CommentSchema = new mongoose.Schema({
+const CommentSchema = mongoose.Schema({
     listId: { type: mongoose.Schema.Types.ObjectId, ref: "List" },
     placeId: { type: mongoose.Schema.Types.ObjectId, ref: "Place" },
     text: { type: String, required: true },
@@ -28,8 +28,15 @@ CommentSchema.virtual('user', {
     foreignField: '_id'
 })
 
+CommentSchema.pre('find', function() {
+    this.populate('list').populate('place').populate('user')
+})
+
+CommentSchema.pre('findOne', function() {
+    this.populate('list').populate('place').populate('user')
+})
+
 CommentSchema.set('toObject', { virtuals: true })
 CommentSchema.set('toJSON', { virtuals: true })
-
 
 module.exports = mongoose.model('Comment', CommentSchema)

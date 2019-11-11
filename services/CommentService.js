@@ -1,4 +1,5 @@
 const Comment = require('../models/Comment.js')
+const url = require('url');
 const _ = require('lodash')
 
 
@@ -42,8 +43,10 @@ const create = async (req, res) => {
 
 // get
 const get = async (req, res) => {
+    const query = url.parse(req.url, true).query
+
     try {
-        const comments = await Comment.find().populate('list', 'place', 'user')
+        const comments = await Comment.find({ ...query })
         res.send(comments)
 
     } catch(err) {
@@ -61,7 +64,7 @@ const getById = async (req, res) => {
     const commentId = req.params.id
 
     try {
-        const comment = await Comment.findById(commentId).populate('list', 'place', 'user')
+        const comment = await Comment.findById(commentId)
         if (!comment) {
             return res.status(404).send({
                 message: "Comment not found with id " + commentId
