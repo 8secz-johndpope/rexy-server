@@ -13,7 +13,7 @@ const UserSchema = mongoose.Schema({
     subscribedListIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
     username: { type: String, unique: true },
     visitedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
-    xid: { type: String, required: true, unique: true }
+    xid: { type: String, required: true, unique: true, immutable: true }
 }, {
     id: false,
     timestamps: true
