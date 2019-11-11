@@ -52,10 +52,13 @@ const getById = async (req, res) => {
 
     try {
         if (query["type"] === "xid") {
+            console.log("getById xid " + userId)
             const users = await User.find({
                 xid: userId
             }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+            console.log("users " + users)
             const user = users[0]
+            console.log("user " + user)
             if (!user) {
                 return res.status(404).send({
                     message: "User not found with xid " + userId
@@ -64,7 +67,9 @@ const getById = async (req, res) => {
             res.send(user)
 
         } else {
+            console.log("getById id " + userId)
             const user = await User.findById(userId).select('-xid')
+            console.log("user " + user)
             if (!user) {
                 return res.status(404).send({
                     message: "User not found with id " + userId
