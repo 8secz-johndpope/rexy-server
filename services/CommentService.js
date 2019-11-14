@@ -17,7 +17,7 @@ const create = async (req, res) => {
         return res.status(400).send({
             message: "Comment must have a user."
         })
-    }
+    }   
 
     if (!listId && !placeId) {
         return res.status(400).send({

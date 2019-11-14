@@ -55,7 +55,7 @@ const getById = async (req, res) => {
             console.log("getById xid " + userId)
             const user = await User.findOne({
                 xid: userId
-            }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+            }).select('-xid').populate('bookmarkedPlaces', 'lists', 'subscribedLists', 'visitedPlaces')
             console.log("user " + user)
             if (!user) {
                 return res.status(404).send({
@@ -112,7 +112,7 @@ const update = async (req, res) => {
             username,
             visitedPlaceIds,
             xid
-        }, _.isUndefined), { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, _.isUndefined), { new : true }).select('-xid').populate('bookmarkedPlaces', 'lists', 'subscribedLists', 'visitedPlaces')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -273,7 +273,7 @@ const addBookmark = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(userId, {
             bookmarkedPlaceIds: placeIds
-        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, { new : true }).select('-xid').populate('bookmarkedPlaces', 'lists', 'subscribedLists', 'visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -332,7 +332,7 @@ const removeBookmark = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(userId, {
             bookmarkedPlaceIds
-        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, { new : true }).select('-xid').populate('bookmarkedPlaces', 'lists', 'subscribedLists', 'visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -391,7 +391,7 @@ const addVisited = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(userId, {
             visitedPlaceIds: placeIds
-        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, { new : true }).select('-xid').populate('bookmarkedPlaces', 'lists', 'subscribedLists', 'visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -450,7 +450,7 @@ const removeVisited = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(userId, {
             visitedPlaceIds: placeIds
-        }, { new : true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, { new : true }).select('-xid').populate('bookmarkedPlaces', 'lists', 'subscribedLists', 'visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + userId

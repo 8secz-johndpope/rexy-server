@@ -1,5 +1,7 @@
 const Place = require('../models/Place.js')
+const GooglePlaces = require('@google/maps').createClient({ key: process.env.GOOGLE_PLACES_API_KEY, Promise: Promise});
 const url = require('url');
+const Yelp = require('yelp-fusion').client(process.env.YELP_API_KEY)
 const _ = require('lodash')
 
 
@@ -154,30 +156,236 @@ const remove = async (req, res) => {
 
 // search
 const search = async (req, res) => {
-    const query = url.parse(req.url, true).query
-    var terms = query["query"]
+    const q = url.parse(req.url, true).query
+    var { query, location, latitude, longitude, radius } = q
 
-    if (!terms) {
+    if (!query && !location && !latitude && !longitude) {
         return res.status(500).send({
-            message: "An error occurred while searching for Places "
+            message: "Query, or latitude and longitude, or location are required to search for Places."
         })
     }
 
-    if (!terms.endsWith("*")) {
-        terms += "*"
+    if (!latitude && !longitude && location) {
+        try {
+            await GooglePlaces.geocode({
+                address: location
+            }).asPromise().then((response) => {
+                const { lat, lng } = response.json.results[0].geometry.location
+                latitude = lat
+                longitude = lng
+                
+            }).catch((err) => {
+                console.log("geocode err " + err)
+            })
+
+        } catch (err) {
+            console.log("geocoder error " + err)
+        }
     }
 
-    var coordinate = query["coordinate"]
-    var radius = query["radius"]
-    
-    Place.search({ query_string: { query: terms }}, { hydrate: true }, function (err, results) {
-        if (err) {
-            return res.status(500).send({
-                message: err.message || "An error occurred while searching for Places."
-            })
-        }
-        res.send(results.hits.hits)
+    console.log("query " + query)
+    console.log("location " + location)
+    console.log("latitude " + latitude)
+    console.log("longitude " + longitude)
+
+    let [rexyResults, yelpResults, googlePlaceResults] = await Promise.all([getRexyResults(query, latitude, longitude, location, radius), getYelpResults(query, latitude, longitude, location, radius), getGooglePlacesResults(query, latitude, longitude, location, radius)])
+
+    const response = {}
+    response.rexy = rexyResults.filter(function (place) { return place != null })
+    response.yelp = yelpResults.filter(function (place) { return place != null })
+    response.googlePlaces = googlePlaceResults.filter(function (place) { return place != null })
+
+    res.send(response)
+}
+
+async function getRexyResults(query, latitude, longitude, location, radius) {
+    console.log("getRexyResults " + [query, latitude, longitude, location, radius])
+
+    if (!query) {
+        return []
+    }
+
+    var queryString = query
+    if (!queryString.endsWith("*")) {
+        queryString += "*"
+    }
+
+    return new Promise((resolve, reject) => {
+        Place.search({ query_string: { query: queryString }}, { hydrate: true }, function (err, results) {
+            if (err) {
+                console.log("err " + err)
+                resolve([])
+            } else {
+                resolve(results.hits.hits)
+            }
+        })
     })
+}
+
+async function getYelpResults(query, latitude, longitude, location, radius) {
+    console.log("getYelpResults " + [query, latitude, longitude, location, radius])
+
+    if ((!latitude || !longitude) && !location) {
+        return []
+    }
+
+    var placeIds
+    await Yelp.search(_.omitBy({
+        term: query,
+        location,
+        latitude,
+        longitude,
+        radius: radius ? Math.min(Math.round(radius), 40000) : 8047,
+        categories: ["active", "arts", "food", "nightlife", "religiousorgs", "restaurants"],
+        limit: 10
+    }, _.isUndefined)).then(response => {
+        placeIds = response.jsonBody.businesses./*filter(function(business) {
+            return business.categories.some((category) => Place.supportedTypes.indexOf(category) !== -1)
+        }).*/map(business => business.id)
+    }).catch (err => {
+        console.log("Yelp search err " + err)
+    })
+
+    return Promise.all(placeIds.map(placeId => getYelpDetails(placeId)))
+}
+
+async function getYelpDetails(id) { 
+    console.log("getYelpDetails " + id)
+
+    var business
+    await Yelp.business(id).then(response => {
+        business = response.jsonBody
+    }).catch(err => {
+        console.log("err " + id + ", " + err)
+        return
+    })
+
+    if (!business) {
+        console.log("no yelp business with id " + id)
+        return undefined
+    }
+
+    return mapYelp(business)
+
+    function mapYelp(yelpPlace) {
+        const place = new Place()
+        // place.accolades = 
+        if (yelpPlace.location.display_address) {
+            place.address = { formatted: yelpPlace.location.display_address.join(", ") }
+        }
+        // place.coordinate = 
+        // place.hours = 
+        place.isOpen = !yelpPlace.is_closed
+        // place.notes = 
+        // place.otherLists = 
+        place.phoneNumber = yelpPlace.phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+        if (yelpPlace.price) {
+            place.price = yelpPlace.price.length
+        }
+        // place.specialty = 
+        // place.subtitle = 
+        // place.tags = 
+        place.title = yelpPlace.name
+        // place.type = 
+        // place.url = googlePlace.website
+
+        place.yelpRating = yelpPlace.rating
+        place.yelpReviewCount = yelpPlace.review_count
+
+        return place
+    }
+}
+
+async function getGooglePlacesResults(query, latitude, longitude, location, radius) {
+    console.log("getGooglePlacesResults " + [query, latitude, longitude, location, radius])
+
+    if (!query) {
+        return []
+    }
+
+    var placeIds
+    if (latitude && longitude) {
+        await GooglePlaces.placesAutoComplete({
+            input: query,
+            location: [latitude, longitude],
+            radius: radius ? Math.min(Math.round(radius), 40000) : 8047,
+            strictbounds: true
+        }).asPromise().then((response) => {
+            placeIds = response.json.predictions.filter(function(prediction) {
+                return prediction.types.some((type) => Place.supportedTypes.indexOf(type) !== -1)
+            }).map(prediction => prediction.place_id)
+
+        }).catch((err) => {
+            console.log("GooglePlaces placesAutoComplete err " + JSON.stringify(err))
+        })
+    
+    } else if (location) {
+        await GooglePlaces.placesAutoComplete({
+            input: query + " " + location,
+            radius: radius ? Math.min(Math.round(radius), 40000) : 8047,
+            strictbounds: true
+        }).asPromise().then((response) => {
+            placeIds = response.json.predictions.filter(function(prediction) {
+                return prediction.types.some((type) => Place.supportedTypes.indexOf(type) !== -1)
+            }).map(prediction => prediction.place_id)
+            
+        }).catch((err) => {
+            console.log("GooglePlaces placesAutoComplete err " + JSON.stringify(err))
+        })
+
+    } else {
+        return []
+    }
+
+    return Promise.all(placeIds.map(placeId => getGooglePlaceDetails(placeId)))
+}
+
+async function getGooglePlaceDetails(placeid) {
+    console.log("getGooglePlaceDetails " + placeid)
+
+    var business
+    await GooglePlaces.place({
+        placeid
+    }).asPromise().then((response) => {
+        business = response.json.result
+    }).catch((err) => {
+        console.log("GooglePlaces place err " + JSON.stringify(err))
+    })
+
+    if (!business) {
+        console.log("no google places business with id " + id)
+        return undefined
+    }
+
+    return mapGooglePlace(business)
+
+    function mapGooglePlace(googlePlace) {
+        const place = new Place()
+        // place.accolades = 
+        place.address = { formatted: googlePlace.formatted_address }
+        // place.coordinate = 
+        // place.hours = 
+        if (googlePlace.permanently_closed) {
+            place.isOpen = false
+        }
+        // place.notes = 
+        // place.otherLists = 
+        if (googlePlace.formatted_phone_number) {
+            place.phoneNumber = googlePlace.formatted_phone_number.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+        }
+        place.price = googlePlace.price_level
+        // place.specialty = 
+        // place.subtitle = 
+        // place.tags = 
+        place.title = googlePlace.name
+        // place.type = 
+        place.url = googlePlace.website
+
+        place.googlePlacesRating = googlePlace.rating
+        place.googlePlacesReviewCount = googlePlace.user_ratings_total
+
+        return place
+    }
 }
 
 
