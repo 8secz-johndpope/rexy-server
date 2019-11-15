@@ -87,7 +87,18 @@ PlaceSchema.set('toObject', { virtuals: true })
 PlaceSchema.set('toJSON', { virtuals: true })
 
 PlaceSchema.plugin(mongoosastic, { hosts: [process.env.BONSAI_URL] })
-mongoose.model('Place', PlaceSchema).createMapping(function(err, mapping) {
+mongoose.model('Place', PlaceSchema).createMapping(/*{
+    "settings" : {
+        "analysis" : {
+            "analyzer" : {
+                "standard_asciifolding" : {
+                    "tokenizer" : "standard",
+                    "filter" : ["asciifolding"]
+                }
+            }
+        }
+    }ż
+}, */function(err, mapping) {
     if (err) {
       console.log('error creating mapping (you can safely ignore this)')
       console.log(err)
