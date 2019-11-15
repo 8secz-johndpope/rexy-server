@@ -44,7 +44,7 @@ UserSchema.virtual('visitedPlaces', {
 })
 
 UserSchema.pre('findOne', function() {
-    this.populate('bookmarkedPlaces', 'lists', 'subscribedLists', 'visitedPlaces')
+    this.populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
 })
 
 UserSchema.set('toObject', { virtuals: true })
