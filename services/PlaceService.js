@@ -266,12 +266,18 @@ async function getYelpDetails(id) {
     return mapYelp(business)
 
     function mapYelp(yelpPlace) {
+        console.log("Yelp " + JSON.stringify(yelpPlace))
         const place = new Place()
         // place.accolades = 
         if (yelpPlace.location.display_address) {
             place.address = { formatted: yelpPlace.location.display_address.join(", ") }
         }
-        // place.coordinate = 
+        if (yelpPlace.coordinates.latitude && yelpPlace.coordinates.longitude) {
+            var coordinate = {}
+            coordinate.type = "Point"
+            coordinate.coordinates = [yelpPlace.coordinates.longitude, yelpPlace.coordinates.latitude]
+            place.coordinate = coordinate
+        }
         // place.hours = 
         place.isOpen = !yelpPlace.is_closed
         // place.notes = 
@@ -358,10 +364,16 @@ async function getGooglePlaceDetails(placeid) {
     return mapGooglePlace(business)
 
     function mapGooglePlace(googlePlace) {
+        console.log("Google Place " + JSON.stringify(googlePlace))
         const place = new Place()
         // place.accolades = 
         place.address = { formatted: googlePlace.formatted_address }
-        // place.coordinate = 
+        if (googlePlace.geometry.location.lat && googlePlace.geometry.location.lng) {
+            var coordinate = {}
+            coordinate.type = "Point"
+            coordinate.coordinates = [googlePlace.geometry.location.lng, googlePlace.geometry.location.lat]
+            place.coordinate = coordinate
+        }
         // place.hours = 
         if (googlePlace.permanently_closed) {
             place.isOpen = false
