@@ -10,9 +10,7 @@ const create = async (req, res) => {
     const { accolades, address, coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url } = req.body
 
     if (!type) {
-        return res.status(400).send({
-            message: "Place must have a type."
-        })
+        isClean = false
     }
 
     if (!title) {

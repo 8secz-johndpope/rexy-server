@@ -62,7 +62,7 @@ const PlaceSchema = mongoose.Schema({
     subtitle: { type: String, es_indexed: true },
     tags: { type: [String], es_indexed: true },
     title: { type: String, required: true, es_indexed: true },
-    type: { type: String, required: true, es_indexed: true },
+    type: { type: String, es_indexed: true },
     url: { type: String, es_indexed: false },
     
     googlePlacesRating: { type: Number, es_indexed: false },
