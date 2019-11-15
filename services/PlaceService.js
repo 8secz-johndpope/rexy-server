@@ -7,9 +7,9 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
-    const { accolades, address, coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url } = req.body
+    var { accolades, address, coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url } = req.body
 
-    if (!type) {
+    if (!type && isClean) {
         isClean = false
     }
 
