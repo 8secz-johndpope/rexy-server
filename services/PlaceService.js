@@ -266,7 +266,6 @@ async function getYelpDetails(id) {
     return mapYelp(business)
 
     function mapYelp(yelpPlace) {
-        console.log("Yelp " + JSON.stringify(yelpPlace))
         const place = new Place()
         // place.accolades = 
         if (yelpPlace.location.display_address) {
@@ -364,7 +363,6 @@ async function getGooglePlaceDetails(placeid) {
     return mapGooglePlace(business)
 
     function mapGooglePlace(googlePlace) {
-        console.log("Google Place " + JSON.stringify(googlePlace))
         const place = new Place()
         // place.accolades = 
         place.address = { formatted: googlePlace.formatted_address }
