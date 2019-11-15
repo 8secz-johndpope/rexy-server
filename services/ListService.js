@@ -91,7 +91,7 @@ const update = async (req, res) => {
             isPrivate,
             placeIds,
             title
-        }, _.isUndefined), { new : true }).populate('authors').populate('places').populate('subscribers')
+        }, _.isUndefined), { new: true }).populate('authors').populate('places').populate('subscribers')
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + listId
@@ -206,7 +206,7 @@ const addPlace = async (req, res) => {
 
         const updatedList = await List.findByIdAndUpdate(listId, {
             placeIds
-        }, { new : true }).populate('authors').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + listId
@@ -265,7 +265,7 @@ const removePlace = async (req, res) => {
 
         const updatedList = await List.findByIdAndUpdate(listId, {
             placeIds
-        }, { new : true }).populate('authors').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + listId
@@ -337,7 +337,7 @@ const addSubscriber = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             subscriberIds
-        }, { new : true }).populate('authors').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + listId
@@ -404,7 +404,7 @@ const removeSubscriber = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             subscriberIds
-        }, { new : true }).populate('authors').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + listId

@@ -10,4 +10,7 @@ module.exports = (app) => {
 
     // search
     app.get('/search/places', places.search)
+
+    // migrate
+    app.post('/places/migrate', places.migrate)
 }

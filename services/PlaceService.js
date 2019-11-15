@@ -100,7 +100,7 @@ const update = async (req, res) => {
             title,
             type,
             url
-        }, _.isUndefined), { new : true })
+        }, _.isUndefined), { new: true })
         if (!place) {
             return res.status(404).send({
                 message: "Place not found with id " + req.params.id
@@ -199,17 +199,17 @@ const search = async (req, res) => {
 async function getRexyResults(query, latitude, longitude, location, radius) {
     console.log("getRexyResults " + [query, latitude, longitude, location, radius])
 
-    if (!query) {
-        return []
-    }
-
-    var queryString = query
-    if (!queryString.endsWith("*")) {
-        queryString += "*"
+    var queryString
+    if (query && !query.endsWith("*")) {
+        queryString = query + "*"
+    } else if (!query) {
+        queryString = "*"
     }
 
     return new Promise((resolve, reject) => {
-        Place.search({ query_string: { query: queryString }}, { hydrate: true }, function (err, results) {
+        Place.search({ bool: { must: { query_string: { query: queryString }}, filter: { geo_distance: { distance: radius, geo_coordinate: { "lat": latitude, "lon": longitude } } } } },
+        { hydrate: true },
+        function (err, results) {
             if (err) {
                 console.log("err " + err)
                 resolve([])
@@ -397,4 +397,74 @@ async function getGooglePlaceDetails(placeid) {
 }
 
 
-module.exports = { create, get, getById, update, remove, search }
+// migrate coordinates
+const migrate = async (req, res) => {
+    const { trigger, latitude, longitude, distance, query } = req.body
+
+    var places
+    try {
+        places = await Place.find()
+
+    } catch (err) {
+        console.log("PlaceService.migrate " + err)
+
+        res.status(500).send({
+            message: err.message || "An error occurred while retrieving Places prior to migration."
+        })
+    }
+
+    console.log("Preparing to migrate " + places.length + " places...")
+
+    // var queryString = query
+    // if (!queryString.endsWith("*")) {
+    //     queryString += "*"
+    // }
+
+    // Place.search({
+    //     bool: { must: { query_string: { query: queryString }}, filter: { geo_distance: { distance, geo_coordinate: { "lat": latitude, "lon": longitude } } } }
+    // }, { hydrate: true }, function (err, results) {
+    //     if (err) {
+    //         console.log("geo query err " + err)
+    //     } else {
+    //         console.log("geo query results " + JSON.stringify(results.hits.hits))
+    //     }
+    // })
+
+    if (!trigger) {
+        console.log("Migration was not triggered.")
+        return res.status(500).send({
+            message: "Migration was not triggered."
+        })
+    }
+
+    console.log("migrate places with ids: " + places.map(place => place._id))
+
+    // updatePlaceCoordinate(places[0])
+
+    // places.map(place => updatePlaceCoordinate(place))
+
+    res.send(true)
+}
+
+async function updatePlaceCoordinate(place) {
+    console.log("updatePlaceCoordinate " + place._id)
+
+    var geo_coordinate = { lat: place.coordinate.coordinates[1], lon: place.coordinate.coordinates[0]}
+
+    console.log("geo coordinate for " + place.title + "(" + place._id + ") " + JSON.stringify(geo_coordinate))
+
+    try {
+        const updatedPlace = await Place.findByIdAndUpdate(place._id, {
+            geo_coordinate
+        }, { new: true })
+        console.log("post-update " + JSON.stringify(updatedPlace.coordinate) + ", " + JSON.stringify(updatedPlace.geo_coordinate))
+
+    } catch (err) {
+        console.log("update err " + place._id + ", " + err)
+    }
+
+    return true
+}
+
+
+module.exports = { create, get, getById, update, remove, search, migrate }

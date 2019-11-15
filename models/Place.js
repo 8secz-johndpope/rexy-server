@@ -51,6 +51,7 @@ const PlaceSchema = mongoose.Schema({
     accolades: { type: [String], es_indexed: true },
     address: { type: AddressSchema, es_schema: AddressSchema, es_indexed: true, es_select: 'formatted' },
     coordinate: { type: { type: String, default: "Point" }, coordinates: [Number], es_indexed: false },
+    geo_coordinate: { geo_point: { type: String, es_indexed: true, es_type: 'geo_point' }, lat: { type: Number, min: -90, max: 90 }, lon: { type: Number, min: -180, max: 180 } },
     hours: { type: HoursOfServiceSchema, es_indexed: false },
     isClean: { type: Boolean, default: false, es_indexed: false },
     isOpen: { type: Boolean, default: true, es_indexed: false },
@@ -73,8 +74,6 @@ const PlaceSchema = mongoose.Schema({
     id: false,
     timestamps: true
 })
-
-PlaceSchema.index({ coordinate: "2dsphere" })
 
 PlaceSchema.pre('find', function() {
     this.select('-googlePlacesRating').select('-googlePlacesReviewCount').select('-yelpRating').select('-yelpReviewCount')

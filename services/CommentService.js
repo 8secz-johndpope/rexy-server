@@ -99,7 +99,7 @@ const update = async (req, res) => {
             placeId,
             text,
             userId
-        }, _.isUndefined), { new : true }).populate('list').populate('place').populate('user')
+        }, _.isUndefined), { new: true }).populate('list').populate('place').populate('user')
         if (!comment) {
             return res.status(404).send({
                 message: "Comment not found with id " + commentId
