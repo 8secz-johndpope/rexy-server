@@ -7,7 +7,7 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
-    var { accolades, address, coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url } = req.body
+    var { accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url } = req.body
 
     if (!type && isClean) {
         isClean = false
@@ -19,7 +19,7 @@ const create = async (req, res) => {
         })
     }
 
-    const place = new Place({ accolades, address, coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url })
+    const place = new Place({ accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url })
 
     try {
         const savedPlace = await place.save()
@@ -80,13 +80,13 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
-    const { accolades, address, coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url } = req.body
+    const { accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url } = req.body
 
     try {
         const place = await Place.findByIdAndUpdate(req.params.id, _.omitBy({
             accolades,
             address,
-            coordinate,
+            geo_coordinate,
             hours,
             isClean,
             isOpen,
@@ -207,7 +207,7 @@ async function getRexyResults(query, latitude, longitude, location, radius) {
     }
 
     return new Promise((resolve, reject) => {
-        Place.search({ bool: { must: { query_string: { query: queryString }}, filter: { geo_distance: { distance: radius, geo_coordinate: { "lat": latitude, "lon": longitude } } } } },
+        Place.search({ bool: { must: { query_string: { query: queryString }}, filter: { geo_distance: { distance: radius, geo_coordinate: { lat: latitude, lon: longitude } } } } },
         { hydrate: true },
         function (err, results) {
             if (err) {
@@ -273,8 +273,8 @@ async function getYelpDetails(id) {
         }
         if (yelpPlace.coordinates.latitude && yelpPlace.coordinates.longitude) {
             var coordinate = {}
-            coordinate.type = "Point"
-            coordinate.coordinates = [yelpPlace.coordinates.longitude, yelpPlace.coordinates.latitude]
+            coordinate.lat = yelpPlace.coordinates.latitude
+            coordinate.lon = yelpPlace.coordinates.longitude
             place.coordinate = coordinate
         }
         // place.hours = 
@@ -368,8 +368,8 @@ async function getGooglePlaceDetails(placeid) {
         place.address = { formatted: googlePlace.formatted_address }
         if (googlePlace.geometry.location.lat && googlePlace.geometry.location.lng) {
             var coordinate = {}
-            coordinate.type = "Point"
-            coordinate.coordinates = [googlePlace.geometry.location.lng, googlePlace.geometry.location.lat]
+            coordinate.lat = googlePlace.geometry.location.latitude
+            coordinate.lon = googlePlace.geometry.location.longitude
             place.coordinate = coordinate
         }
         // place.hours = 
