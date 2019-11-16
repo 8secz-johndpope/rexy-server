@@ -266,16 +266,13 @@ async function getYelpDetails(id) {
     return mapYelp(business)
 
     function mapYelp(yelpPlace) {
-        const place = new Place()
+        var place = new Place()
         // place.accolades = 
         if (yelpPlace.location.display_address) {
             place.address = { formatted: yelpPlace.location.display_address.join(", ") }
         }
         if (yelpPlace.coordinates.latitude && yelpPlace.coordinates.longitude) {
-            var coordinate = {}
-            coordinate.lat = yelpPlace.coordinates.latitude
-            coordinate.lon = yelpPlace.coordinates.longitude
-            place.geo_coordinate = coordinate
+            place.geo_coordinate = { lat: yelpPlace.coordinates.latitude, lon: yelpPlace.coordinates.longitude }
         }
         // place.hours = 
         place.isOpen = !yelpPlace.is_closed
@@ -363,14 +360,11 @@ async function getGooglePlaceDetails(placeid) {
     return mapGooglePlace(business)
 
     function mapGooglePlace(googlePlace) {
-        const place = new Place()
+        var place = new Place()
         // place.accolades = 
         place.address = { formatted: googlePlace.formatted_address }
         if (googlePlace.geometry.location.lat && googlePlace.geometry.location.lng) {
-            var coordinate = {}
-            coordinate.lat = googlePlace.geometry.location.latitude
-            coordinate.lon = googlePlace.geometry.location.longitude
-            place.geo_coordinate = coordinate
+            place.geo_coordinate = { lat: googlePlace.geometry.location.lat, lon: googlePlace.geometry.location.lng }
         }
         // place.hours = 
         if (googlePlace.permanently_closed) {
@@ -449,7 +443,7 @@ const migrate = async (req, res) => {
 async function updatePlaceCoordinate(place) {
     console.log("updatePlaceCoordinate " + place._id)
 
-    var geo_coordinate = { lat: place.coordinate.coordinates[1], lon: place.coordinate.coordinates[0]}
+    var geo_coordinate = { lat: place.coordinate.coordinates[1], lon: place.coordinate.coordinates[0] }
 
     console.log("geo coordinate for " + place.title + "(" + place._id + ") " + JSON.stringify(geo_coordinate))
 
