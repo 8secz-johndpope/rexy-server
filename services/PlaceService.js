@@ -454,10 +454,11 @@ async function updatePlaceCoordinate(place) {
     console.log("geo coordinate for " + place.title + "(" + place._id + ") " + JSON.stringify(geo_coordinate))
 
     try {
-        const updatedPlace = await Place.findByIdAndUpdate(place._id, {
-            geo_coordinate
-        }, { new: true })
-        console.log("post-update " + JSON.stringify(updatedPlace.coordinate) + ", " + JSON.stringify(updatedPlace.geo_coordinate))
+        const updatedPlace = await Place.update({ _id: place._id }, { $unset: { coordinate: 1 } })
+        // const updatedPlace = await Place.findByIdAndUpdate(place._id, {
+        //     geo_coordinate
+        // }, { new: true })
+        console.log("post-update " + JSON.stringify(updatedPlace))
 
     } catch (err) {
         console.log("update err " + place._id + ", " + err)
