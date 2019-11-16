@@ -21,8 +21,6 @@ const create = async (req, res) => {
 
     const place = new Place({ accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url })
 
-    console.log("place to create " + JSON.stringify(place))
-
     try {
         const savedPlace = await place.save()
         res.send(savedPlace)
