@@ -275,7 +275,7 @@ async function getYelpDetails(id) {
             var coordinate = {}
             coordinate.lat = yelpPlace.coordinates.latitude
             coordinate.lon = yelpPlace.coordinates.longitude
-            place.coordinate = coordinate
+            place.geo_coordinate = coordinate
         }
         // place.hours = 
         place.isOpen = !yelpPlace.is_closed
@@ -370,7 +370,7 @@ async function getGooglePlaceDetails(placeid) {
             var coordinate = {}
             coordinate.lat = googlePlace.geometry.location.latitude
             coordinate.lon = googlePlace.geometry.location.longitude
-            place.coordinate = coordinate
+            place.geo_coordinate = coordinate
         }
         // place.hours = 
         if (googlePlace.permanently_closed) {
