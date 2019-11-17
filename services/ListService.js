@@ -127,9 +127,7 @@ const remove = async (req, res) => {
                 message: "List not found with id " + listId
             })
         }
-        res.send({
-            message: "Successfully deleted List with id " + listId
-        })
+        res.send(listId)
 
     } catch (err) {
         console.log("ListService.remove " + listId + err)

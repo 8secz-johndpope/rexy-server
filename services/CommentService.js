@@ -134,9 +134,7 @@ const remove = async (req, res) => {
                 message: "Comment not found with id " + commentId
             })
         }
-        res.send({
-            message: "Successfully deleted Comment with id " + commentId
-        })
+        res.send(commentId)
         
     } catch(err) {
         console.log("CommentService.remove " + commentId + err)

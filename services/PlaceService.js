@@ -126,6 +126,8 @@ const update = async (req, res) => {
 
 // delete
 const remove = async (req, res) => {
+    const placeId = req.params.id
+
     try {
         const place = await Place.findByIdAndDelete(req.params.id)
         if (!place) {
@@ -133,9 +135,7 @@ const remove = async (req, res) => {
                 message: "Place not found with id " + req.params.id
             })
         }
-        res.send({
-            message: "Successfully deleted Place with id " + req.params.id
-        })
+        res.send(placeId)
         
     } catch(err) {
         console.log("PlaceService.remove " + req.params.id + err)

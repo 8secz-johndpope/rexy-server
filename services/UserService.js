@@ -143,9 +143,7 @@ const remove = async (req, res) => {
                 message: "User not found with id " + userId
             })
         }
-        res.send({
-            message: "Successfully deleted User with id " + userId
-        })
+        res.send(userId)
 
     } catch (err) {
         console.log("UserService.remove " + userId + err)
