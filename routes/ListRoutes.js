@@ -11,6 +11,9 @@ module.exports = (app) => {
     // search
     app.get('/search/lists', lists.search)
 
+    // comments on lists
+    app.get('/lists/:id/comments', lists.getComments)
+
     // places on lists
     app.post('/lists/:id/places', lists.addPlace)
     app.delete('/lists/:id/places/:placeId', lists.removePlace)

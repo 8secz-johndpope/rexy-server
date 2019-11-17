@@ -28,10 +28,6 @@ CommentSchema.virtual('user', {
     foreignField: '_id'
 })
 
-CommentSchema.pre('find', function() {
-    this.populate('list').populate('place').populate('user')
-})
-
 CommentSchema.pre('findOne', function() {
     this.populate('list').populate('place').populate('user')
 })

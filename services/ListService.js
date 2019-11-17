@@ -1,3 +1,4 @@
+const Comment = require('../models/Comment.js')
 const List = require('../models/List.js')
 const User = require('../models/User.js')
 const url = require('url');
@@ -168,6 +169,24 @@ const search = async (req, res) => {
         }
         res.send(results.hits.hits)
     })
+}
+
+
+// user lists
+const getComments = async (req, res) => {
+    const listId = req.params.id
+
+    try {
+        const comments = await Comment.find({ listId })
+        res.send(comments)
+
+    } catch (err) {
+        console.log("ListService.getComments " + listId + err)
+
+        res.status(500).send({
+            message: err.message || "An error occurred while retrieving List's Comments."
+        })
+    }
 }
 
 
@@ -422,4 +441,4 @@ const removeSubscriber = async (req, res) => {
 }
 
 
-module.exports = { create, get, getById, update, remove, search, addPlace, removePlace, addSubscriber, removeSubscriber }
+module.exports = { create, get, getById, update, remove, search, getComments, addPlace, removePlace, addSubscriber, removeSubscriber }
