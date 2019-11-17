@@ -13,19 +13,22 @@ const CommentSchema = mongoose.Schema({
 CommentSchema.virtual('list', {
     ref: 'List',
     localField: 'listId',
-    foreignField: '_id'
+    foreignField: '_id',
+    justOne: true
 })
 
 CommentSchema.virtual('place', {
     ref: 'Place',
     localField: 'placeId',
-    foreignField: '_id'
+    foreignField: '_id',
+    justOne: true
 })
 
 CommentSchema.virtual('user', {
     ref: 'User',
     localField: 'userId',
-    foreignField: '_id'
+    foreignField: '_id',
+    justOne: true
 })
 
 CommentSchema.pre('findOne', function() {
