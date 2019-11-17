@@ -177,7 +177,7 @@ const getComments = async (req, res) => {
     const listId = req.params.id
 
     try {
-        const comments = await Comment.find({ listId })
+        const comments = await Comment.find({ listId }).populate('user')
         res.send(comments)
 
     } catch (err) {
