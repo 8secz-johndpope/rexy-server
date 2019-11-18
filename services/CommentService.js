@@ -46,7 +46,7 @@ const get = async (req, res) => {
     const query = url.parse(req.url, true).query
 
     try {
-        const comments = await Comment.find({ ...query })
+        const comments = await Comment.find({ ...query }).populate('list').populate('place').populate('user')
         res.send(comments)
 
     } catch(err) {
