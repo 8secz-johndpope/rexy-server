@@ -185,7 +185,140 @@ const search = async (req, res) => {
 }
 
 
-// user lists
+// add author
+const addAuthor = async (req, res) => {
+    const listId = req.params.id
+    const { _id, id } = req.body
+    const userId = _id || id
+
+    if (!listId) {
+        return res.status(400).send({
+            message: "No List id provided to add Author to."
+        })
+    }
+
+    if (!userId) {
+        return res.status(400).send({
+            message: "User does not have an id."
+        })
+    }
+
+    try {
+        const list = await List.findById(listId)
+        if (!list) {
+            return res.status(404).send({
+                message: "List not found with id " + listId
+            })
+        }
+
+        const user = await User.findById(userId)
+        if (!user) {
+            return res.status(404).send({
+                message: "User not found with id " + userId
+            })
+        }
+
+        if (list.authorIds.includes(userId) && user.listIds.includes(listId)) {
+            return res.send(list)
+        }
+
+        const authorIds = list.authorIds || []
+        authorIds.addToSet(userId)
+
+        const listIds = user.listIds || []
+        listIds.addToSet(listId)
+
+        await User.findByIdAndUpdate(userId, {
+            listIds
+        })
+        const updatedList = await List.findByIdAndUpdate(listId, {
+            authorIds
+        }, { new: true }).populate('authors').populate('places').populate('subscribers')
+        if (!updatedList) {
+            return res.status(404).send({
+                message: "List not found with id " + listId
+            })
+        }
+        res.send(updatedList)
+
+    } catch (err) {
+        console.log("UserService.addAuthor " + listId + req.body + err)
+        
+        return res.status(500).send({
+            message: "An error occurred while adding author to List with id " + listId
+        })
+    }
+}
+
+
+// remove author
+const removeAuthor = async (req, res) => {
+    const listId = req.params.id
+    const userId = req.params.userId
+
+    if (!listId) {
+        return res.status(400).send({
+            message: "No List id provided to remove author from."
+        })
+    }
+
+    if (!userId) {
+        return res.status(400).send({
+            message: "Author to remove from List does not have an id."
+        })
+    }
+
+    try {
+        const list = await List.findById(listId)
+        if (!list) {
+            return res.status(404).send({
+                message: "List not found with id " + listId
+            })
+        }
+
+        const user = await User.findById(userId)
+        if (!user) {
+            return res.status(404).send({
+                message: "User not found with id " + userId
+            })
+        }
+
+        if (!list.authorIds.includes(userId) && !user.listIds.includes(listId)) {
+            return res.send(list)
+        }
+
+        const authorIds = list.authorIds.filter(function(id) {
+            return id != userId
+        })
+
+        const listIds = user.listIds.filter(function(id) {
+            return id != listId
+        })
+
+        await User.findByIdAndUpdate(userId, {
+            listIds
+        })
+        const updatedList = await List.findByIdAndUpdate(listId, {
+            authorIds
+        }, { new: true }).populate('authors').populate('places').populate('subscribers')
+        if (!updatedList) {
+            return res.status(404).send({
+                message: "List not found with id " + listId
+            })
+        }
+        res.send(updatedList)
+
+    } catch (err) {
+        console.log("UserService.removeAuthor " + listId + userId + err)
+
+        return res.status(500).send({
+            message: "An error occurred while removing an author from List with id " + listId
+        })
+    }
+}
+
+
+// comments
 const getComments = async (req, res) => {
     const listId = req.params.id
 
@@ -454,4 +587,4 @@ const removeSubscriber = async (req, res) => {
 }
 
 
-module.exports = { create, get, getById, update, remove, search, getComments, addPlace, removePlace, addSubscriber, removeSubscriber }
+module.exports = { create, get, getById, update, remove, search, addAuthor, removeAuthor, getComments, addPlace, removePlace, addSubscriber, removeSubscriber }

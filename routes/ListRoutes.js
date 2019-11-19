@@ -11,10 +11,14 @@ module.exports = (app) => {
     // search
     app.get('/search/lists', lists.search)
 
-    // comments on lists
+    // authors
+    app.post('/lists/:id/authors', lists.addAuthor)
+    app.delete('/lists/:id/authors/:userId', lists.removeAuthor)
+
+    // comments
     app.get('/lists/:id/comments', lists.getComments)
 
-    // places on lists
+    // places
     app.post('/lists/:id/places', lists.addPlace)
     app.delete('/lists/:id/places/:placeId', lists.removePlace)
 
