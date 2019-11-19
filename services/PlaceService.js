@@ -231,7 +231,7 @@ async function getRexyResults(query, latitude, longitude, location, radius) {
     }
 
     return new Promise((resolve, reject) => {
-        Place.search({ bool: { must: { query_string: { query: queryString }}, filter: { geo_distance: { distance: radius, geo_coordinate: { lat: latitude, lon: longitude } } } } },
+        Place.search({ bool: { must: { query_string: { query: queryString }}, filter: { geo_distance: { distance: radius || 16093, geo_coordinate: { lat: latitude, lon: longitude } } } } },
         { hydrate: true },
         function (err, results) {
             if (err) {
@@ -257,7 +257,7 @@ async function getYelpResults(query, latitude, longitude, location, radius) {
         location,
         latitude,
         longitude,
-        radius: radius ? Math.min(Math.round(radius), 40000) : 8047,
+        radius: radius ? Math.min(Math.round(radius), 40000) : 16093,
         categories: ["active", "arts", "food", "nightlife", "religiousorgs", "restaurants"],
         limit: 10
     }, _.isUndefined)).then(response => {
@@ -332,7 +332,7 @@ async function getGooglePlacesResults(query, latitude, longitude, location, radi
         await GooglePlaces.placesAutoComplete({
             input: query,
             location: [latitude, longitude],
-            radius: radius ? Math.min(Math.round(radius), 40000) : 8047,
+            radius: radius ? Math.min(Math.round(radius), 40000) : 16093,
             strictbounds: true
         }).asPromise().then((response) => {
             placeIds = response.json.predictions.filter(function(prediction) {
@@ -346,7 +346,7 @@ async function getGooglePlacesResults(query, latitude, longitude, location, radi
     } else if (location) {
         await GooglePlaces.placesAutoComplete({
             input: query + " " + location,
-            radius: radius ? Math.min(Math.round(radius), 40000) : 8047,
+            radius: radius ? Math.min(Math.round(radius), 40000) : 16093,
             strictbounds: true
         }).asPromise().then((response) => {
             placeIds = response.json.predictions.filter(function(prediction) {
