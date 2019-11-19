@@ -9,7 +9,7 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
-    const { accoladesYear, date, dateBasedAccolades, description, groupName, isDeleted, isPrivate, placeIds, title } = req.body
+    const { accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, isDeleted, isPrivate, placeIds, subscriberIds, title } = req.body
 
     if (!title) {
         return res.status(400).send({
@@ -17,7 +17,7 @@ const create = async (req, res) => {
         })
     }
 
-    const list = new List({ accoladesYear, date, dateBasedAccolades, description, groupName, isDeleted, isPrivate, placeIds, title })
+    const list = new List({ accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, isDeleted, isPrivate, placeIds, subscriberIds, title })
 
     try {
         const savedList = await list.save()
@@ -81,11 +81,12 @@ const getById = async (req, res) => {
 // update
 const update = async (req, res) => {
     const listId = req.params.id
-    const { accoladesYear, date, dateBasedAccolades, description, groupName, isDeleted, isPrivate, placeIds, title } = req.body
+    const { accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, isDeleted, isPrivate, placeIds, subscriberIds, title } = req.body
 
     try {
         const list = await List.findByIdAndUpdate(listId, _.omitBy({
             accoladesYear,
+            authorIds,
             date,
             dateBasedAccolades,
             description,
@@ -93,6 +94,7 @@ const update = async (req, res) => {
             isDeleted,
             isPrivate,
             placeIds,
+            subscriberIds,
             title
         }, _.isUndefined), { new: true }).populate('authors').populate('places').populate('subscribers')
         if (!list) {
@@ -161,20 +163,20 @@ const remove = async (req, res) => {
 
 // search
 const search = async (req, res) => {
-    const query = url.parse(req.url, true).query
-    var terms = query["query"]
+    const q = url.parse(req.url, true).query
+    var { query } = q
 
-    if (!terms) {
+    if (!query) {
         return res.status(500).send({
             message: "An error occurred while searching for Places "
         })
     }
 
-    if (!terms.endsWith("*")) {
-        terms += "*"
+    if (!query.endsWith("*")) {
+        query += "*"
     }
 
-    List.search({ query_string: { query: terms }}, { hydrate: true }, function (err, results) {
+    List.search({ query_string: { query }}, { hydrate: true }, function (err, results) {
         if (err) {
             return res.status(500).send({
                 message: err.message || "An error occurred while searching for Lists."

@@ -12,7 +12,7 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
-    var { accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url } = req.body
+    var { accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url, googlePlacesRating, googlePlacesReviewCount, yelpRating, yelpReviewCount } = req.body
 
     if (!type && isClean) {
         isClean = false
@@ -24,7 +24,7 @@ const create = async (req, res) => {
         })
     }
 
-    const place = new Place({ accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url })
+    const place = new Place({ accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url, googlePlacesRating, googlePlacesReviewCount, yelpRating, yelpReviewCount })
 
     try {
         const savedPlace = await place.save()
@@ -58,26 +58,28 @@ const get = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
+    const placeId = req.params.id
+
     try {
-        const place = await Place.findById(req.params.id)
+        const place = await Place.findById(placeId)
         if (!place) {
             return res.status(404).send({
-                message: "Place not found with id " + req.params.id
+                message: "Place not found with id " + placeId
             })
         }
         res.send(place)
 
     } catch(err) {
-        console.log("PlaceService.getById " + req.params.id + err)
+        console.log("PlaceService.getById " + placeId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "Place not found with id " + req.params.id
+                message: "Place not found with id " + placeId
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while retrieving Place with id " + req.params.id
+            message: "An error occurred while retrieving Place with id " + placeId
         })
     }
 }
@@ -85,7 +87,8 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
-    const { accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url } = req.body
+    const placeId = req.params.id
+    const { accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url, googlePlacesRating, googlePlacesReviewCount, yelpRating, yelpReviewCount } = req.body
 
     try {
         const place = await Place.findByIdAndUpdate(req.params.id, _.omitBy({
@@ -104,26 +107,30 @@ const update = async (req, res) => {
             tags,
             title,
             type,
-            url
+            url,
+            googlePlacesRating,
+            googlePlacesReviewCount,
+            yelpRating,
+            yelpReviewCount
         }, _.isUndefined), { new: true })
         if (!place) {
             return res.status(404).send({
-                message: "Place not found with id " + req.params.id
+                message: "Place not found with id " + placeId
             })
         }
         res.send(place)
 
     } catch(err) {
-        console.log("PlaceService.update " + req.params.id + err)
+        console.log("PlaceService.update " + placeId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "Place not found with id " + req.params.id
+                message: "Place not found with id " + placeId
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while updating Place with id " + req.params.id
+            message: "An error occurred while updating Place with id " + placeId
         })
     }
 }
@@ -134,10 +141,10 @@ const remove = async (req, res) => {
     const placeId = req.params.id
 
     try {
-        const place = await Place.findByIdAndDelete(req.params.id)
+        const place = await Place.findByIdAndDelete(placeId)
         if (!place) {
             return res.status(404).send({
-                message: "Place not found with id " + req.params.id
+                message: "Place not found with id " + placeId
             })
         }
 
@@ -162,15 +169,15 @@ const remove = async (req, res) => {
         res.send(placeId)
         
     } catch(err) {
-        console.log("PlaceService.remove " + req.params.id + err)
+        console.log("PlaceService.remove " + placeId + err)
         
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
-                message: "Place not found with id " + req.params.id
+                message: "Place not found with id " + placeId
             })
         }
         return res.status(500).send({
-            message: "An error occurred while deleting Place with id " + req.params.id
+            message: "An error occurred while deleting Place with id " + placeId
         })
     }
 }
@@ -230,7 +237,7 @@ async function getRexyResults(query, latitude, longitude, location, radius) {
         queryString = "*"
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         Place.search({ bool: { must: { query_string: { query: queryString }}, filter: { geo_distance: { distance: radius || 16093, geo_coordinate: { lat: latitude, lon: longitude } } } } },
         { hydrate: true },
         function (err, results) {
@@ -457,14 +464,13 @@ const migrate = async (req, res) => {
 
     console.log("migrate places with ids: " + places.map(place => place._id))
 
-    // updatePlaceCoordinate(places[0])
-
-    // places.map(place => updatePlaceCoordinate(place))
+    // migration(places[0])
+    // places.map(place => migration(place))
 
     res.send(true)
 }
 
-async function updatePlaceCoordinate(place) {
+async function migration(place) {
     console.log("updatePlaceCoordinate " + place._id)
 
     var geo_coordinate = { lat: place.coordinate.coordinates[1], lon: place.coordinate.coordinates[0] }

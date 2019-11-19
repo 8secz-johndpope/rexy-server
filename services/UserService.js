@@ -51,11 +51,12 @@ const get = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
-    const query = url.parse(req.url, true).query
     const userId = req.params.id
+    const q = url.parse(req.url, true).query
+    const { type } = q
 
     try {
-        if (query.type === "xid") {
+        if (type === "xid") {
             const user = await User.findOne({
                 xid: userId
             }).select('-xid')
