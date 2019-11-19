@@ -1,5 +1,10 @@
+const Comment = require('../models/Comment.js')
+const List = require('../models/List.js')
 const Place = require('../models/Place.js')
+const User = require('../models/User.js')
+
 const GooglePlaces = require('@google/maps').createClient({ key: process.env.GOOGLE_PLACES_API_KEY, Promise: Promise});
+const mongoose = require('mongoose')
 const url = require('url');
 const Yelp = require('yelp-fusion').client(process.env.YELP_API_KEY)
 const _ = require('lodash')
@@ -135,6 +140,25 @@ const remove = async (req, res) => {
                 message: "Place not found with id " + req.params.id
             })
         }
+
+        Comment.deleteMany({ placeId }, function (err) {
+            if (err) {
+                console.log("Comment.deleteMany err " + err)
+            }
+        })
+
+        List.updateMany({ $pull: { placeIds: mongoose.Types.ObjectId(placeId) } }, function (err) {
+            if (err) {
+                console.log("List.updateMany err " + err)
+            }
+        })
+
+        User.updateMany({ $pull: { bookmarkedPlaceIds: mongoose.Types.ObjectId(placeId), visitedPlaceIds: mongoose.Types.ObjectId(placeId) } }, function (err) {
+            if (err) {
+                console.log("User.update err " + err)
+            }
+        })
+
         res.send(placeId)
         
     } catch(err) {

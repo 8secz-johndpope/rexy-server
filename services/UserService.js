@@ -1,4 +1,8 @@
+const Comment = require('../models/Comment.js')
+const List = require('../models/List.js')
 const User = require('../models/User.js')
+
+const mongoose = require('mongoose')
 const url = require('url');
 const _ = require('lodash')
 
@@ -143,6 +147,19 @@ const remove = async (req, res) => {
                 message: "User not found with id " + userId
             })
         }
+
+        Comment.deleteMany({ userId }, function (err) {
+            if (err) {
+                console.log("Comment.deleteMany err " + err)
+            }
+        })
+
+        List.updateMany({ $pull: { authorIds: mongoose.Types.ObjectId(userId), subscriberIds: mongoose.Types.ObjectId(userId) } }, function (err) {
+            if (err) {
+                console.log("List.updateMany err " + err)
+            }
+        })
+
         res.send(userId)
 
     } catch (err) {
