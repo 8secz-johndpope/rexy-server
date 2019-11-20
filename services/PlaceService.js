@@ -231,14 +231,56 @@ async function getRexyResults(query, latitude, longitude, location, radius) {
     console.log("getRexyResults " + [query, latitude, longitude, location, radius])
 
     var queryString
-    if (query && !query.endsWith("*")) {
-        queryString = query + "*"
-    } else if (!query) {
-        queryString = "*"
+    if (query) {
+        queryString = " " + query.toLowerCase() + " "
+        
+        if ((queryString.includes(" michelin ") && (queryString.includes(" star ") || queryString.includes(" stars "))) || (queryString.includes(" bib ") && queryString.includes(" gourmand "))) {
+            if (queryString.includes(" 3 ")) {
+                queryString = queryString.replace(/3/g, "")
+                queryString += " _MS_3"
+            } else if (queryString.includes(" 2 ")) {
+                queryString = queryString.replace(/2/g, "")
+                queryString += " _MS_2"
+            } else if (queryString.includes(" 1 ")) {
+                queryString = queryString.replace(/1/g, "")
+                queryString += " _MS_1"
+            } else if (queryString.includes(" bib ") && queryString.includes(" gourmand ")) {
+                queryString = queryString.replace(/bib/g, "")
+                queryString = queryString.replace(/gourmand/g, "")
+                queryString += " _MS_BG"
+            } else {
+                queryString += " _MS_"
+            }
+
+            queryString = queryString.replace(/michelin/g, "")
+            queryString = queryString.replace(/stars/g, "")
+            queryString = queryString.replace(/star/g, "")
+        }
+
+        q = queryString.replace(/ +/g, " ").trim().split(" ").map(str => str + "*").join(" ")
+
+        console.log("formattedQueryString " + q)
     }
 
     return new Promise((resolve) => {
-        Place.search({ bool: { must: { query_string: { query: queryString }}, filter: { geo_distance: { distance: radius || 16093, geo_coordinate: { lat: latitude, lon: longitude } } } } },
+        Place.search({
+            bool: {
+                must: {
+                    query_string: {
+                        query: q
+                    }
+                },
+                filter: {
+                    geo_distance: {
+                        distance: radius || 16093,
+                        geo_coordinate: {
+                            lat: latitude,
+                            lon: longitude
+                        }
+                    }
+                }
+            }
+        },
         { hydrate: true },
         function (err, results) {
             if (err) {
