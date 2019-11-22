@@ -236,11 +236,13 @@ async function getRexyResults(text, latitude, longitude, location, radius, filte
     if (text && text.length > 0) {
         must.push({ query_string: { query: text.replace(/ +/g, " ").trim().split(" ").map(str => str + "*").join(" ") } })
     }
-    
-    if (filters.accolades) {
-        for (var accolade of filters.accolades) {
-            accolade += filters.accoladesYear ? filters.accoladesYear : "*"
-            must.push({ query_string: { query: accolade } })
+
+    if (filters) {
+        if (filters.accolades) {
+            for (var accolade of filters.accolades) {
+                accolade += filters.accoladesYear ? filters.accoladesYear : "*"
+                must.push({ query_string: { query: accolade } })
+            }
         }
     }
 
