@@ -185,8 +185,9 @@ const remove = async (req, res) => {
 
 // search
 const search = async (req, res) => {
-    const parameters = url.parse(req.url, true).query
-    var { text, location, latitude, longitude, radius } = parameters
+    var { text, location, latitude, longitude, radius, filters } = req.body
+
+    console.log("req.body " + JSON.stringify(req.body))
 
     if (!text && !location && !latitude && !longitude) {
         return res.status(500).send({
@@ -217,7 +218,7 @@ const search = async (req, res) => {
     console.log("latitude " + latitude)
     console.log("longitude " + longitude)
 
-    let [rexyResults, yelpResults, googlePlaceResults] = await Promise.all([getRexyResults(text, latitude, longitude, location, radius), getYelpResults(text, latitude, longitude, location, radius), getGooglePlacesResults(text, latitude, longitude, location, radius)])
+    let [rexyResults, yelpResults, googlePlaceResults] = await Promise.all([getRexyResults(text, latitude, longitude, location, radius, filters), getYelpResults(text, latitude, longitude, location, radius), getGooglePlacesResults(text, latitude, longitude, location, radius)])
 
     const response = {}
     response.rexy = rexyResults.filter(function (place) { return place != null })
@@ -227,34 +228,25 @@ const search = async (req, res) => {
     res.send(response)
 }
 
-async function getRexyResults(text, latitude, longitude, location, radius) {
-    console.log("getRexyResults " + [text, latitude, longitude, location, radius])
+async function getRexyResults(text, latitude, longitude, location, radius, filters) {
+    console.log("getRexyResults " + [text, latitude, longitude, location, radius, filters])
 
-    var textString
-    if (text) {
-        textString = " " + text.toLowerCase() + " "
-        
-        if (textString.includes(" michelin ") || (textString.includes(" bib ") && textString.includes(" gourmand "))) {
-            if (textString.includes(" 3 ")) {
-                textString += " _MS_3"
-            } else if (textString.includes(" 2 ")) {
-                textString += " _MS_2"
-            } else if (textString.includes(" 1 ")) {
-                textString += " _MS_1"
-            } else if (textString.includes(" bib ") && textString.includes(" gourmand ")) {
-                textString += " _MS_BG"
-            } else {
-                textString += " _MS_"
-            }
+    var must = []
+
+    if (text && text.length > 0) {
+        must.push({ query_string: { query: text.replace(/ +/g, " ").trim().split(" ").map(str => str + "*").join(" ") } })
+    }
+    
+    if (filters.accolades) {
+        for (var accolade of filters.accolades) {
+            accolade += filters.accoladesYear ? filters.accoladesYear : "*"
+            must.push({ query_string: { query: accolade } })
         }
-
-        textString = textString.replace(/ +/g, " ").trim().split(" ").map(str => str + "*").join(" ")
-
-        console.log("formattedQueryString " + textString)
     }
 
-    var query = {
+    const query = {
         bool: {
+            must,
             filter: {
                 geo_distance: {
                     distance: radius || 16093,
@@ -267,9 +259,7 @@ async function getRexyResults(text, latitude, longitude, location, radius) {
         }
     }
 
-    if (textString && textString.length > 0) {
-        query.bool.must = { query_string: { query: textString } }
-    }
+    console.log("query " + JSON.stringify(query))
 
     const options = {
         hydrate: true,

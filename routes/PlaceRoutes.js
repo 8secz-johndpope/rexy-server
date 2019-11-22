@@ -9,7 +9,7 @@ module.exports = (app) => {
     app.delete('/places/:id', places.remove)
 
     // search
-    app.get('/search/places', places.search)
+    app.post('/search/places', places.search)
 
     // migrate
     app.post('/places/migrate', places.migrate)
