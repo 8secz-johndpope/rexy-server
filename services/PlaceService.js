@@ -185,16 +185,16 @@ const remove = async (req, res) => {
 
 // search
 const search = async (req, res) => {
-    const q = url.parse(req.url, true).query
-    var { query, location, latitude, longitude, radius } = q
+    const parameters = url.parse(req.url, true).query
+    var { text, location, latitude, longitude, radius } = parameters
 
-    if (!query && !location && !latitude && !longitude) {
+    if (!text && !location && !latitude && !longitude) {
         return res.status(500).send({
-            message: "Query, or latitude and longitude, or location are required to search for Places."
+            message: "Text, or latitude and longitude, or location are required to search for Places."
         })
     }
 
-    if (!latitude && !longitude && location) {
+    if (location && !latitude && !longitude) {
         try {
             await GooglePlaces.geocode({
                 address: location
@@ -212,12 +212,12 @@ const search = async (req, res) => {
         }
     }
 
-    console.log("query " + query)
+    console.log("text " + text)
     console.log("location " + location)
     console.log("latitude " + latitude)
     console.log("longitude " + longitude)
 
-    let [rexyResults, yelpResults, googlePlaceResults] = await Promise.all([getRexyResults(query, latitude, longitude, location, radius), getYelpResults(query, latitude, longitude, location, radius), getGooglePlacesResults(query, latitude, longitude, location, radius)])
+    let [rexyResults, yelpResults, googlePlaceResults] = await Promise.all([getRexyResults(text, latitude, longitude, location, radius), getYelpResults(text, latitude, longitude, location, radius), getGooglePlacesResults(text, latitude, longitude, location, radius)])
 
     const response = {}
     response.rexy = rexyResults.filter(function (place) { return place != null })
@@ -227,53 +227,67 @@ const search = async (req, res) => {
     res.send(response)
 }
 
-async function getRexyResults(query, latitude, longitude, location, radius) {
-    console.log("getRexyResults " + [query, latitude, longitude, location, radius])
+async function getRexyResults(text, latitude, longitude, location, radius) {
+    console.log("getRexyResults " + [text, latitude, longitude, location, radius])
 
-    var queryString
-    if (query) {
-        queryString = " " + query.toLowerCase() + " "
+    var textString
+    if (text) {
+        textString = " " + text.toLowerCase() + " "
         
-        if (queryString.includes(" michelin ") || (queryString.includes(" bib ") && queryString.includes(" gourmand "))) {
-            if (queryString.includes(" 3 ")) {
-                queryString += " _MS_3"
-            } else if (queryString.includes(" 2 ")) {
-                queryString += " _MS_2"
-            } else if (queryString.includes(" 1 ")) {
-                queryString += " _MS_1"
-            } else if (queryString.includes(" bib ") && queryString.includes(" gourmand ")) {
-                queryString += " _MS_BG"
+        if (textString.includes(" michelin ") || (textString.includes(" bib ") && textString.includes(" gourmand "))) {
+            if (textString.includes(" 3 ")) {
+                textString += " _MS_3"
+            } else if (textString.includes(" 2 ")) {
+                textString += " _MS_2"
+            } else if (textString.includes(" 1 ")) {
+                textString += " _MS_1"
+            } else if (textString.includes(" bib ") && textString.includes(" gourmand ")) {
+                textString += " _MS_BG"
             } else {
-                queryString += " _MS_"
+                textString += " _MS_"
             }
         }
 
-        q = queryString.replace(/ +/g, " ").trim().split(" ").map(str => str + "*").join(" ")
+        textString = textString.replace(/ +/g, " ").trim().split(" ").map(str => str + "*").join(" ")
 
-        console.log("formattedQueryString " + q)
+        console.log("formattedQueryString " + textString)
     }
 
-    return new Promise((resolve) => {
-        Place.search({
-            bool: {
-                must: {
-                    query_string: {
-                        query: q
-                    }
-                },
-                filter: {
-                    geo_distance: {
-                        distance: radius || 16093,
-                        geo_coordinate: {
-                            lat: latitude,
-                            lon: longitude
-                        }
+    var query = {
+        bool: {
+            filter: {
+                geo_distance: {
+                    distance: radius || 16093,
+                    geo_coordinate: {
+                        lat: latitude,
+                        lon: longitude
                     }
                 }
             }
-        },
-        { hydrate: true },
-        function (err, results) {
+        }
+    }
+
+    if (textString && textString.length > 0) {
+        query.bool.must = { query_string: { query: textString } }
+    }
+
+    const options = {
+        hydrate: true,
+        sort: [
+            {
+                _geo_distance: {
+                    geo_coordinate: {
+                        lat: latitude,
+                        lon: longitude
+                    },
+                    order: "asc"
+                }
+            }
+        ]
+    }
+
+    return new Promise((resolve) => {
+        Place.search(query, options, function (err, results) {
             if (err) {
                 console.log("err " + err)
                 resolve([])
