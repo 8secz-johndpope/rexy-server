@@ -232,6 +232,7 @@ async function getRexyResults(text, latitude, longitude, location, radius, filte
     console.log("getRexyResults " + [text, latitude, longitude, location, radius, filters])
 
     var must = []
+    var should = []
 
     if (text && text.length > 0) {
         must.push({ query_string: { query: text.replace(/ +/g, " ").trim().split(" ").map(str => str + "*").join(" ") } })
@@ -241,7 +242,11 @@ async function getRexyResults(text, latitude, longitude, location, radius, filte
         if (filters.accolades) {
             for (var accolade of filters.accolades) {
                 accolade += filters.accoladesYear ? filters.accoladesYear : "*"
-                must.push({ query_string: { query: accolade } })
+                if (filters.accolades.length > 1) {
+                    should.push({ query_string: { query: accolade } })
+                } else {
+                    must.push({ query_string: { query: accolade } })
+                }
             }
         }
     }
@@ -249,6 +254,7 @@ async function getRexyResults(text, latitude, longitude, location, radius, filte
     const query = {
         bool: {
             must,
+            should,
             filter: {
                 geo_distance: {
                     distance: radius || 16093,
