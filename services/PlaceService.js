@@ -265,6 +265,7 @@ async function getRexyResults(text, latitude, longitude, location, radius, filte
         bool: {
             must,
             should,
+            minimum_should_match: 1,
             filter: {
                 geo_distance: {
                     distance: radius || 16093,
