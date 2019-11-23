@@ -238,6 +238,7 @@ async function getRexyResults(text, latitude, longitude, location, radius, filte
         must.push({ query_string: { query: text.replace(/ +/g, " ").trim().split(" ").map(str => str + "*").join(" ") } })
     }
 
+    // https://stackoverflow.com/a/35851235
     if (filters) {
         if (filters.accolades) {
             for (var accolade of filters.accolades) {
