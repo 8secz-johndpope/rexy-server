@@ -249,6 +249,16 @@ async function getRexyResults(text, latitude, longitude, location, radius, filte
                 }
             }
         }
+
+        if (filters.price) {
+            for (var price of filters.price) {
+                if (filters.price.length > 1) {
+                    should.push({ match: { price } })
+                } else {
+                    must.push({ match: { price } })
+                }
+            }
+        }
     }
 
     const query = {
