@@ -242,21 +242,13 @@ async function getRexyResults(text, latitude, longitude, location, radius, filte
         if (filters.accolades) {
             for (var accolade of filters.accolades) {
                 accolade += filters.accoladesYear ? filters.accoladesYear : "*"
-                if (filters.accolades.length > 1) {
-                    should.push({ query_string: { query: accolade } })
-                } else {
-                    must.push({ query_string: { query: accolade } })
-                }
+                should.push({ query_string: { query: accolade } })
             }
         }
 
         if (filters.price) {
             for (var price of filters.price) {
-                if (filters.price.length > 1) {
-                    should.push({ match: { price } })
-                } else {
-                    must.push({ match: { price } })
-                }
+                should.push({ match: { price } })
             }
         }
     }
