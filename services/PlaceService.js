@@ -253,11 +253,10 @@ async function getRexyResults(text, latitude, longitude, location, radius, filte
         }
     }
 
-    const query = {
+    var query = {
         bool: {
             must,
             should,
-            minimum_should_match: 1,
             filter: {
                 geo_distance: {
                     distance: radius || 16093,
@@ -268,6 +267,10 @@ async function getRexyResults(text, latitude, longitude, location, radius, filte
                 }
             }
         }
+    }
+
+    if (should.length > 0) {
+        query.bool.minimum_should_match = 1
     }
 
     console.log("query " + JSON.stringify(query))
