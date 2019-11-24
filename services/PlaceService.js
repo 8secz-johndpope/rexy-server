@@ -232,32 +232,37 @@ async function getRexyResults(text, latitude, longitude, location, radius, filte
     console.log("getRexyResults " + [text, latitude, longitude, location, radius, filters])
 
     var must = []
-    var should = []
 
     if (text && text.length > 0) {
         must.push({ query_string: { query: text.replace(/ +/g, " ").trim().split(" ").map(str => str + "*").join(" ") } })
     }
 
-    // https://stackoverflow.com/a/35851235
     if (filters) {
         if (filters.accolades) {
+            var should = []
+
             for (var accolade of filters.accolades) {
                 accolade += filters.accoladesYear ? filters.accoladesYear : "*"
                 should.push({ query_string: { query: accolade } })
             }
+
+            must.push({ bool: { should, minimum_should_match: 1 } })
         }
 
         if (filters.price) {
+            var should = []
+
             for (var price of filters.price) {
                 should.push({ match: { price } })
             }
+
+            must.push({ bool: { should, minimum_should_match: 1 } })
         }
     }
 
     var query = {
         bool: {
             must,
-            should,
             filter: {
                 geo_distance: {
                     distance: radius || 16093,
@@ -268,10 +273,6 @@ async function getRexyResults(text, latitude, longitude, location, radius, filte
                 }
             }
         }
-    }
-
-    if (should.length > 0) {
-        query.bool.minimum_should_match = 1
     }
 
     console.log("query " + JSON.stringify(query))
