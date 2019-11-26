@@ -386,14 +386,14 @@ const addPlace = async (req, res) => {
             
             const notification = new APNSProvider.apn.Notification({
                 badge: 0,
-                body: "Check it out!",
+                body: "Check it out in Rexy!",
                 collapseId: updatedList._id,
                 payload: {
                     "category": "kListUpdated",
                     "listId": updatedList._id
                 },
                 titleLocArgs: ["title"],
-                titleLocKey: `${updatedList.title} was updated`,
+                titleLocKey: `A new place was added to ${updatedList.title}.`,
                 topic: "com.gdwsk.Rexy"
             })
 
