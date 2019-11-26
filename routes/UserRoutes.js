@@ -14,10 +14,12 @@ module.exports = (app) => {
 
     // user bookmarks
     app.post('/users/:id/bookmarks', users.addBookmark)
+    app.get('/users/:id/bookmarks', users.getBookmarks)
     app.delete('/users/:id/bookmarks/:placeId', users.removeBookmark)
 
     // user visited
     app.post('/users/:id/visited', users.addVisited)
+    app.get('/users/:id/visited', users.getVisited)
     app.delete('/users/:id/visited/:placeId', users.removeVisited)
 
     // register

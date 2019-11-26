@@ -309,6 +309,42 @@ const addBookmark = async (req, res) => {
 }
 
 
+// get bookmarks
+const getBookmarks = async (req, res) => {
+    const userId = req.params.id
+
+    if (!userId) {
+        return res.status(400).send({
+            message: "No User id provided to get bookmarked Places from."
+        })
+    }
+
+    try {
+        const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
+        if (!user) {
+            return res.status(404).send({
+                message: "User not found with id " + userId
+            })
+        }
+
+        res.send(user.bookmarkedPlaces || [])
+
+    } catch (err) {
+        console.log("UserService.getBookmarks " + userId + placeId + err)
+
+        if (err.kind === 'ObjectId') {
+            return res.status(404).send({
+                message: "User not found with id " + userId
+            })
+        }
+
+        return res.status(500).send({
+            message: "An error occurred while getting bookmarked Places from User with id " + userId
+        })
+    }
+}
+
+
 // delete bookmark
 const removeBookmark = async (req, res) => {
     const userId = req.params.id
@@ -353,7 +389,7 @@ const removeBookmark = async (req, res) => {
         res.send(updatedUser)
 
     } catch (err) {
-        console.log("ListService.removeBookmark " + userId + placeId + err)
+        console.log("UserService.removeBookmark " + userId + placeId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -427,6 +463,41 @@ const addVisited = async (req, res) => {
 }
 
 
+// get visited
+const getVisited = async (req, res) => {
+    const userId = req.params.id
+
+    if (!userId) {
+        return res.status(400).send({
+            message: "No User id provided to get visited Places from."
+        })
+    }
+
+    try {
+        const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
+        if (!user) {
+            return res.status(404).send({
+                message: "User not found with id " + userId
+            })
+        }
+
+        res.send(user.visitedPlaces || [])
+
+    } catch (err) {
+        console.log("UserService.getVisited " + userId + placeId + err)
+
+        if (err.kind === 'ObjectId') {
+            return res.status(404).send({
+                message: "User not found with id " + userId
+            })
+        }
+
+        return res.status(500).send({
+            message: "An error occurred while getting visited Places from User with id " + userId
+        })
+    }
+}
+
 // delete visited
 const removeVisited = async (req, res) => {
     const userId = req.params.id
@@ -471,7 +542,7 @@ const removeVisited = async (req, res) => {
         res.send(updatedUser)
 
     } catch (err) {
-        console.log("ListService.removeVisited " + userId + placeId + err)
+        console.log("UserService.removeVisited " + userId + placeId + err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -507,8 +578,8 @@ const register = async (req, res) => {
     }
 
     updatedUser.apnsDeviceToken = undefined
-    
+
     res.send(updatedUser)
 }
 
-module.exports = { create, get, getById, update, remove, getLists, getSubscriptions, addBookmark, removeBookmark, addVisited, removeVisited, register }
+module.exports = { create, get, getById, update, remove, getLists, getSubscriptions, addBookmark, getBookmarks, removeBookmark, addVisited, getVisited, removeVisited, register }
