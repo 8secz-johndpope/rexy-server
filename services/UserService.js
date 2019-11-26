@@ -1,5 +1,6 @@
 const Comment = require('../models/Comment.js')
 const List = require('../models/List.js')
+const NotificationSettings = require('../models/NotificationSettings.js')
 const User = require('../models/User.js')
 
 const mongoose = require('mongoose')
@@ -36,7 +37,7 @@ const create = async (req, res) => {
 // get
 const get = async (req, res) => {
     try {
-        const users = await User.find().select('-xid').select('-apnsDeviceToken')
+        const users = await User.find().select('-xid').select('-notificationSettings')
         res.send(users)
 
     } catch (err) {
@@ -59,7 +60,7 @@ const getById = async (req, res) => {
         if (type === "xid") {
             const user = await User.findOne({
                 xid: userId
-            }).select('-xid').select('-apnsDeviceToken')
+            }).select('-xid').select('-notificationSettings')
             if (!user) {
                 return res.status(404).send({
                     message: "User not found with xid " + userId
@@ -68,7 +69,7 @@ const getById = async (req, res) => {
             res.send(user)
 
         } else {
-            const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
+            const user = await User.findById(userId).select('-xid').select('-notificationSettings')
             if (!user) {
                 return res.status(404).send({
                     message: "User not found with id " + userId
@@ -113,7 +114,7 @@ const update = async (req, res) => {
             username,
             visitedPlaceIds,
             xid
-        }, _.isUndefined), { new: true }).select('-xid').select('-apnsDeviceToken').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, _.isUndefined), { new: true }).select('-xid').select('-notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -269,7 +270,7 @@ const addBookmark = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
+        const user = await User.findById(userId).select('-xid').select('-notificationSettings')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -285,7 +286,7 @@ const addBookmark = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(userId, {
             bookmarkedPlaceIds: placeIds
-        }, { new: true }).select('-xid').select('-apnsDeviceToken').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, { new: true }).select('-xid').select('-notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -320,7 +321,7 @@ const getBookmarks = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
+        const user = await User.findById(userId).select('-xid').select('-notificationSettings')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -363,7 +364,7 @@ const removeBookmark = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
+        const user = await User.findById(userId).select('-xid').select('-notificationSettings')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -380,7 +381,7 @@ const removeBookmark = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(userId, {
             bookmarkedPlaceIds
-        }, { new: true }).select('-xid').select('-apnsDeviceToken').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, { new: true }).select('-xid').select('-notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -423,7 +424,7 @@ const addVisited = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
+        const user = await User.findById(userId).select('-xid').select('-notificationSettings')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -474,7 +475,7 @@ const getVisited = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
+        const user = await User.findById(userId).select('-xid').select('-notificationSettings')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -516,7 +517,7 @@ const removeVisited = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
+        const user = await User.findById(userId).select('-xid').select('-notificationSettings')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -533,7 +534,7 @@ const removeVisited = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(userId, {
             visitedPlaceIds: placeIds
-        }, { new: true }).select('-xid').select('-apnsDeviceToken').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, { new: true }).select('-xid').select('-notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -561,9 +562,41 @@ const register = async (req, res) => {
     const userId = req.params.id
     const { deviceToken } = req.body
 
+    if (!deviceToken) {
+        return res.status(400).send({
+            message: "No device token provided to register."
+        })
+    }
+
+    const user = await User.findById(userId).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces').populate('notificationSettings')
+
+    if (!user) {
+        return res.status(404).send({
+            message: "User not found with id " + userId
+        })
+    }
+
+    if (user.notificationSettings && user.notificationSettings.deviceToken && user.notificationSettings.deviceToken === deviceToken) {
+        return res.send(user)
+    }
+
+    var notificationSettingsId
+
+    const notificationSettings = new NotificationSettings({ deviceToken })
+    try {
+        const savedSettings = await notificationSettings.save()
+        notificationSettingsId = savedSettings._id
+    } catch (err) {
+        console.log("UserService.create " + err)
+
+        res.status(500).send({
+            message: err.message || "An error occurred while registering device token."
+        })
+    }
+
     var updatedUser = await User.findByIdAndUpdate(userId, {
-        apnsDeviceToken: deviceToken
-    }, { new: true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        notificationSettingsId
+    }, { new: true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces').populate('notificationSettings')
 
     if (!updatedUser) {
         return res.status(404).send({
@@ -571,13 +604,11 @@ const register = async (req, res) => {
         })
     }
 
-    if (!updatedUser.apnsDeviceToken) {
+    if (!updatedUser.notificationSettings || !updatedUser.notificationSettings.deviceToken) {
         return res.status(500).send({
             message: "An error occurred while adding APNs device token to User with id " + userId
         })
     }
-
-    updatedUser.apnsDeviceToken = undefined
 
     res.send(updatedUser)
 }

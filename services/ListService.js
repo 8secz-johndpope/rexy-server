@@ -97,7 +97,7 @@ const update = async (req, res) => {
             placeIds,
             subscriberIds,
             title
-        }, _.isUndefined), { new: true }).populate('authors', '-apnsDeviceToken').populate('places').populate('subscribers')
+        }, _.isUndefined), { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
         if (!list) {
             return res.status(404).send({
                 message: "List not found with id " + listId
@@ -229,16 +229,21 @@ const addAuthor = async (req, res) => {
         console.log("authorIds " + authorIds)
         authorIds.addToSet(userId)
 
-        var listIds = user.listIds || []
-        console.log("listIds " + listIds)
-        listIds.addToSet(listId)
+        var listIds = user.listIds
+        if (!listIds) {
+            console.log("create listIds " + listIds)
+            listIds = [listId]
+        } else {
+            console.log("add to listIds " + listIds)
+            listIds.addToSet(listId)
+        }
 
         await User.findByIdAndUpdate(userId, {
             listIds
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             authorIds
-        }, { new: true }).populate('authors', '-apnsDeviceToken').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + listId
@@ -305,7 +310,7 @@ const removeAuthor = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             authorIds
-        }, { new: true }).populate('authors', '-apnsDeviceToken').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + listId
@@ -344,7 +349,7 @@ const getComments = async (req, res) => {
 // add place
 const addPlace = async (req, res) => {
     const listId = req.params.id
-    const { _id, id } = req.body
+    const { _id, id, title } = req.body
     const placeId = _id || id
 
     if (!listId) {
@@ -376,19 +381,29 @@ const addPlace = async (req, res) => {
 
         const updatedList = await List.findByIdAndUpdate(listId, {
             placeIds
-        }, { new: true }).populate('authors').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors').populate('places').populate('subscribers').populate({
+            path: 'subscribers',
+            populate: {
+                path: 'notificationSettings',
+                model: 'NotificationSettings'
+            }
+        })
         if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + listId
             })
         }
 
+        console.log("updatedList " + updatedList)
+
         if (updatedList.subscribers) {
-            const deviceTokens = updatedList.subscribers.filter(subscriber => subscriber.apnsDeviceToken && subscriber.receiveSubscriptionNotifications).map(subscriber => subscriber.apnsDeviceToken)
+            const deviceTokens = updatedList.subscribers.filter(subscriber => subscriber.notificationSettings && subscriber.notificationSettings.deviceToken && subscriber.notificationSettings.receiveSubscriptionNotifications).map(subscriber => subscriber.notificationSettings.deviceToken)
             
+            console.log("deviceTokens " + deviceTokens)
+
             const notification = new APNSProvider.apn.Notification({
                 badge: 0,
-                body: "Check it out in Rexy!",
+                body: title ? `Check out ${title}!` : "Check it out in Rexy!",
                 collapseId: updatedList._id,
                 payload: {
                     "category": "kListUpdated",
@@ -457,7 +472,7 @@ const removePlace = async (req, res) => {
 
         const updatedList = await List.findByIdAndUpdate(listId, {
             placeIds
-        }, { new: true }).populate('authors', '-apnsDeviceToken').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + listId
@@ -529,7 +544,7 @@ const addSubscriber = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             subscriberIds
-        }, { new: true }).populate('authors', '-apnsDeviceToken').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + listId
@@ -596,7 +611,7 @@ const removeSubscriber = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             subscriberIds
-        }, { new: true }).populate('authors', '-apnsDeviceToken').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: "List not found with id " + listId

@@ -34,6 +34,7 @@ mongoose.connect(databaseConfig.url, {
 
 require('./routes/CommentRoutes.js')(app)
 require('./routes/ListRoutes.js')(app)
+require('./routes/NotificationRoutes.js')(app)
 require('./routes/PlaceRoutes.js')(app)
 require('./routes/UserRoutes.js')(app)
 

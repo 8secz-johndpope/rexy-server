@@ -1,16 +1,15 @@
 const mongoose = require('mongoose')
 
 const UserSchema = mongoose.Schema({
-    apnsDeviceToken: { type: String, unique: true },
     bookmarkedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
     emailAddress: { type: String },
     firstName: { type: String },    
     isVerified: { type: Boolean, default: false },
     lastName: { type: String },
     listIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
+    notificationSettingsId: { type: mongoose.Schema.Types.ObjectId, ref: "NotificationSettings" },
     phoneNumber: { type: String, unique: true },
     prefersUsername: { type: Boolean, defaults: true },
-    receiveSubscriptionNotifications: { type: Boolean, default: true },
     subscribedListIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
     username: { type: String, unique: true },
     visitedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
@@ -32,6 +31,13 @@ UserSchema.virtual('lists', {
     foreignField: '_id'
 })
 
+UserSchema.virtual('notificationSettings', {
+    ref: 'NotificationSettings',
+    localField: 'notificationSettingsId',
+    foreignField: '_id',
+    justOne: true
+})
+
 UserSchema.virtual('subscribedLists', {
     ref: 'List',
     localField: 'subscribedListIds',
@@ -45,7 +51,7 @@ UserSchema.virtual('visitedPlaces', {
 })
 
 UserSchema.pre('findOne', function() {
-    this.populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+    this.populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces').populate('notificationSettings')
 })
 
 UserSchema.set('toObject', { virtuals: true })
