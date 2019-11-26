@@ -19,4 +19,7 @@ module.exports = (app) => {
     // user visited
     app.post('/users/:id/visited', users.addVisited)
     app.delete('/users/:id/visited/:placeId', users.removeVisited)
+
+    // register
+    app.post('/users/:id/register', users.register)
 }

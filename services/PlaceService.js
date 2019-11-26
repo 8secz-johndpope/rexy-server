@@ -5,7 +5,6 @@ const User = require('../models/User.js')
 
 const GooglePlaces = require('@google/maps').createClient({ key: process.env.GOOGLE_PLACES_API_KEY, Promise: Promise});
 const mongoose = require('mongoose')
-const url = require('url');
 const Yelp = require('yelp-fusion').client(process.env.YELP_API_KEY)
 const _ = require('lodash')
 

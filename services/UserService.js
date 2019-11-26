@@ -36,7 +36,7 @@ const create = async (req, res) => {
 // get
 const get = async (req, res) => {
     try {
-        const users = await User.find().select('-xid')
+        const users = await User.find().select('-xid').select('-apnsDeviceToken')
         res.send(users)
 
     } catch (err) {
@@ -59,7 +59,7 @@ const getById = async (req, res) => {
         if (type === "xid") {
             const user = await User.findOne({
                 xid: userId
-            }).select('-xid')
+            }).select('-xid').select('-apnsDeviceToken')
             if (!user) {
                 return res.status(404).send({
                     message: "User not found with xid " + userId
@@ -68,7 +68,7 @@ const getById = async (req, res) => {
             res.send(user)
 
         } else {
-            const user = await User.findById(userId).select('-xid')
+            const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
             if (!user) {
                 return res.status(404).send({
                     message: "User not found with id " + userId
@@ -113,7 +113,7 @@ const update = async (req, res) => {
             username,
             visitedPlaceIds,
             xid
-        }, _.isUndefined), { new: true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, _.isUndefined), { new: true }).select('-xid').select('-apnsDeviceToken').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -269,7 +269,7 @@ const addBookmark = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId).select('-xid')
+        const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -285,7 +285,7 @@ const addBookmark = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(userId, {
             bookmarkedPlaceIds: placeIds
-        }, { new: true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, { new: true }).select('-xid').select('-apnsDeviceToken').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -327,7 +327,7 @@ const removeBookmark = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId).select('-xid')
+        const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -344,7 +344,7 @@ const removeBookmark = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(userId, {
             bookmarkedPlaceIds
-        }, { new: true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, { new: true }).select('-xid').select('-apnsDeviceToken').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -387,7 +387,7 @@ const addVisited = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId).select('-xid')
+        const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -445,7 +445,7 @@ const removeVisited = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId).select('-xid')
+        const user = await User.findById(userId).select('-xid').select('-apnsDeviceToken')
         if (!user) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -462,7 +462,7 @@ const removeVisited = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(userId, {
             visitedPlaceIds: placeIds
-        }, { new: true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, { new: true }).select('-xid').select('-apnsDeviceToken').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -485,4 +485,30 @@ const removeVisited = async (req, res) => {
     }
 }
 
-module.exports = { create, get, getById, update, remove, getLists, getSubscriptions, addBookmark, removeBookmark, addVisited, removeVisited }
+// register
+const register = async (req, res) => {
+    const userId = req.params.id
+    const { deviceToken } = req.body
+
+    var updatedUser = await User.findByIdAndUpdate(userId, {
+        apnsDeviceToken: deviceToken
+    }, { new: true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+
+    if (!updatedUser) {
+        return res.status(404).send({
+            message: "User not found with id " + userId
+        })
+    }
+
+    if (!updatedUser.apnsDeviceToken) {
+        return res.status(500).send({
+            message: "An error occurred while adding APNs device token to User with id " + userId
+        })
+    }
+
+    updatedUser.apnsDeviceToken = undefined
+    
+    res.send(updatedUser)
+}
+
+module.exports = { create, get, getById, update, remove, getLists, getSubscriptions, addBookmark, removeBookmark, addVisited, removeVisited, register }

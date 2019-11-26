@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@google/maps": "^1.0.2",
+    "apn": "^2.2.0",
     "dotenv": "^8.2.0",
     "elasticsearch": "^16.5.0",
     "express": "^4.17.1",

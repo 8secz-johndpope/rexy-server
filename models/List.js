@@ -37,11 +37,11 @@ ListSchema.virtual('subscribers', {
 })
 
 ListSchema.pre('find', function() {
-    this.populate('authors')
+    this.populate('authors', '-apnsDeviceToken')
 })
 
 ListSchema.pre('findOne', function() {
-    this.populate('authors').populate('places').populate('subscribers')
+    this.populate('authors', '-apnsDeviceToken').populate('places').populate('subscribers')
 })
 
 ListSchema.set('toObject', { virtuals: true })

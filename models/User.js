@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 
 const UserSchema = mongoose.Schema({
+    apnsDeviceToken: { type: String, unique: true },
     bookmarkedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
     emailAddress: { type: String },
     firstName: { type: String },    
@@ -16,7 +17,7 @@ const UserSchema = mongoose.Schema({
     xid: { type: String, required: true, unique: true, immutable: true, index: true }
 }, {
     id: false,
-    timestamps: true
+    timestamps: true,
 })
 
 UserSchema.virtual('bookmarkedPlaces', {
