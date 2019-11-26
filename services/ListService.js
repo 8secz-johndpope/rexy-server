@@ -225,10 +225,12 @@ const addAuthor = async (req, res) => {
             return res.send(list)
         }
 
-        const authorIds = list.authorIds || []
+        var authorIds = list.authorIds || []
+        console.log("authorIds " + authorIds)
         authorIds.addToSet(userId)
 
-        const listIds = user.listIds || []
+        var listIds = user.listIds || []
+        console.log("listIds " + listIds)
         listIds.addToSet(listId)
 
         await User.findByIdAndUpdate(userId, {
@@ -369,7 +371,7 @@ const addPlace = async (req, res) => {
             return res.send(list)
         }
 
-        const placeIds = list.placeIds || []
+        var placeIds = list.placeIds || []
         placeIds.addToSet(placeId)
 
         const updatedList = await List.findByIdAndUpdate(listId, {
