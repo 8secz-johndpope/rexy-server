@@ -383,13 +383,17 @@ const addPlace = async (req, res) => {
 
         if (updatedList.subscribers) {
             const deviceTokens = updatedList.subscribers.filter(subscriber => subscriber.apnsDeviceToken && subscriber.receiveSubscriptionNotifications).map(subscriber => subscriber.apnsDeviceToken)
-            console.log("deviceTokens " + deviceTokens)
-
+            
             const notification = new APNSProvider.apn.Notification({
-                collapseId: updatedList._id,
-                titleLocKey: `${updatedList.title} was updated`,
-                titleLocArgs: ["title"],
+                badge: 0,
                 body: "Check it out!",
+                collapseId: updatedList._id,
+                payload: {
+                    "category": "kListUpdated",
+                    "listId": updatedList._id
+                },
+                titleLocArgs: ["title"],
+                titleLocKey: `${updatedList.title} was updated`,
                 topic: "com.gdwsk.Rexy"
             })
 
