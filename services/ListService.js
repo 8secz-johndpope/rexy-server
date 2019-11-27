@@ -394,13 +394,9 @@ const addPlace = async (req, res) => {
             })
         }
 
-        console.log("updatedList " + updatedList)
-
         if (updatedList.subscribers) {
             const deviceTokens = updatedList.subscribers.filter(subscriber => subscriber.notificationSettings && subscriber.notificationSettings.deviceToken && subscriber.notificationSettings.receiveSubscriptionNotifications).map(subscriber => subscriber.notificationSettings.deviceToken)
             
-            console.log("deviceTokens " + deviceTokens)
-
             const notification = new APNSProvider.apn.Notification({
                 badge: 0,
                 body: title ? `Check out ${title}!` : "Check it out in Rexy!",
