@@ -130,7 +130,7 @@ const options = {
         keyId: process.env.APNS_KEY,
         teamId: process.env.APNS_TEAM
     },
-    production: true
+    production: false
 }
 const provider = new apn.Provider(options)
 
