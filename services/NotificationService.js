@@ -6,6 +6,8 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
+    console.log("NotificationService.create")
+
     const { deviceToken } = req.body
 
     if (!deviceToken) {
@@ -32,6 +34,8 @@ const create = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
+    console.log("NotificationService.getById")
+
     const notificationSettingsId = req.params.id
 
     try {
@@ -61,6 +65,8 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
+    console.log("NotificationService.update")
+
     const notificationSettingsId = req.params.id
     const { deviceToken, receiveSubscriptionNotifications } = req.body
 
@@ -94,6 +100,8 @@ const update = async (req, res) => {
 
 // delete
 const remove = async (req, res) => {
+    console.log("NotificationService.remove")
+
     const notificationSettingsId = req.params.id
 
     try {

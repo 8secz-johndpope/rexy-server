@@ -10,6 +10,8 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
+    console.log("ListService.create")
+
     const { accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, isDeleted, isPrivate, placeIds, subscriberIds, title } = req.body
 
     if (!title) {
@@ -36,6 +38,8 @@ const create = async (req, res) => {
 
 // get
 const get = async (req, res) => {
+    console.log("ListService.get")
+
     try {
         const lists = await List.find()
         res.send(lists)
@@ -52,6 +56,8 @@ const get = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
+    console.log("ListService.getById")
+
     const listId = req.params.id
 
     try {
@@ -81,6 +87,8 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
+    console.log("ListService.update")
+
     const listId = req.params.id
     const { accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, isDeleted, isPrivate, placeIds, subscriberIds, title } = req.body
 
@@ -123,6 +131,8 @@ const update = async (req, res) => {
 
 // delete
 const remove = async (req, res) => {
+    console.log("ListService.remove")
+
     const listId = req.params.id
 
     try {
@@ -164,6 +174,8 @@ const remove = async (req, res) => {
 
 // search
 const search = async (req, res) => {
+    console.log("ListService.search")
+
     const q = url.parse(req.url, true).query
     var { query } = q
 
@@ -190,6 +202,8 @@ const search = async (req, res) => {
 
 // add author
 const addAuthor = async (req, res) => {
+    console.log("ListService.addAuthor")
+
     const listId = req.params.id
     const { _id, id } = req.body
     const userId = _id || id
@@ -263,6 +277,8 @@ const addAuthor = async (req, res) => {
 
 // remove author
 const removeAuthor = async (req, res) => {
+    console.log("ListService.removeAuthor")
+
     const listId = req.params.id
     const userId = req.params.userId
 
@@ -330,6 +346,8 @@ const removeAuthor = async (req, res) => {
 
 // comments
 const getComments = async (req, res) => {
+    console.log("ListService.getComments")
+
     const listId = req.params.id
 
     try {
@@ -348,6 +366,8 @@ const getComments = async (req, res) => {
 
 // add place
 const addPlace = async (req, res) => {
+    console.log("ListService.addPlace")
+
     const listId = req.params.id
     const { _id, id, title } = req.body
     const placeId = _id || id
@@ -435,6 +455,8 @@ const addPlace = async (req, res) => {
 
 // remove place
 const removePlace = async (req, res) => {
+    console.log("ListService.removePlace")
+
     const listId = req.params.id
     const placeId = req.params.placeId
 
@@ -494,6 +516,8 @@ const removePlace = async (req, res) => {
 
 // add subscriber
 const addSubscriber = async (req, res) => {
+    console.log("ListService.addSubscriber")
+
     const listId = req.params.id
     const { _id, id } = req.body
     const userId = _id || id
@@ -560,6 +584,8 @@ const addSubscriber = async (req, res) => {
 
 // remove subscriber
 const removeSubscriber = async (req, res) => {
+    console.log("ListService.removeSubscriber")
+
     const listId = req.params.id
     const userId = req.params.userId
 

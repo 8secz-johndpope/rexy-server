@@ -10,6 +10,8 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
+    console.log("UserService.create")
+
     const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, phoneNumber, prefersUsername, receiveSubscriptionNotifications, subscribedListIds, username, visitedPlaceIds, xid } = req.body
 
     if (!xid) {
@@ -36,6 +38,8 @@ const create = async (req, res) => {
 
 // get
 const get = async (req, res) => {
+    console.log("UserService.get")
+
     try {
         const users = await User.find().select('-xid').select('-notificationSettings')
         res.send(users)
@@ -52,6 +56,8 @@ const get = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
+    console.log("UserService.getById")
+
     const userId = req.params.id
     const q = url.parse(req.url, true).query
     const { type } = q
@@ -96,6 +102,8 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
+    console.log("UserService.update")
+
     const userId = req.params.id
     const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, phoneNumber, prefersUsername, receiveSubscriptionNotifications, subscribedListIds, username, visitedPlaceIds, xid } = req.body
 
@@ -140,6 +148,8 @@ const update = async (req, res) => {
 
 // delete
 const remove = async (req, res) => {
+    console.log("UserService.remove")
+
     const userId = req.params.id
 
     try {
@@ -181,6 +191,8 @@ const remove = async (req, res) => {
 
 // user lists
 const getLists = async (req, res) => {
+    console.log("UserService.getLists")
+
     const userId = req.params.id
 
     try {
@@ -217,6 +229,8 @@ const getLists = async (req, res) => {
 
 // user subscriptions
 const getSubscriptions = async (req, res) => {
+    console.log("UserService.getSubscriptions")
+
     const userId = req.params.id
 
     try {
@@ -253,6 +267,8 @@ const getSubscriptions = async (req, res) => {
 
 // add bookmark
 const addBookmark = async (req, res) => {
+    console.log("UserService.addBookmark")
+
     const userId = req.params.id
     const { _id, id } = req.body
     const placeId = _id || id
@@ -312,6 +328,8 @@ const addBookmark = async (req, res) => {
 
 // get bookmarks
 const getBookmarks = async (req, res) => {
+    console.log("UserService.getBookmarks")
+
     const userId = req.params.id
 
     if (!userId) {
@@ -348,6 +366,8 @@ const getBookmarks = async (req, res) => {
 
 // delete bookmark
 const removeBookmark = async (req, res) => {
+    console.log("UserService.removeBookmark")
+
     const userId = req.params.id
     const placeId = req.params.placeId
 
@@ -407,6 +427,8 @@ const removeBookmark = async (req, res) => {
 
 // add visited
 const addVisited = async (req, res) => {
+    console.log("UserService.addVisited")
+
     const userId = req.params.id
     const { _id, id } = req.body
     const placeId = _id || id
@@ -466,6 +488,8 @@ const addVisited = async (req, res) => {
 
 // get visited
 const getVisited = async (req, res) => {
+    console.log("UserService.getVisited")
+
     const userId = req.params.id
 
     if (!userId) {
@@ -501,6 +525,8 @@ const getVisited = async (req, res) => {
 
 // delete visited
 const removeVisited = async (req, res) => {
+    console.log("UserService.removeVisited")
+
     const userId = req.params.id
     const placeId = req.params.placeId
 
@@ -559,6 +585,8 @@ const removeVisited = async (req, res) => {
 
 // register
 const register = async (req, res) => {
+    console.log("UserService.register")
+
     const userId = req.params.id
     const { deviceToken } = req.body
 

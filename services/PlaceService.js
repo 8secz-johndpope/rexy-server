@@ -11,6 +11,8 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
+    console.log("PlaceService.create")
+
     var { accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url, googlePlacesRating, googlePlacesReviewCount, yelpRating, yelpReviewCount } = req.body
 
     if (!type && isClean) {
@@ -41,6 +43,8 @@ const create = async (req, res) => {
 
 // get
 const get = async (req, res) => {
+    console.log("PlaceService.get")
+
     try {
         const places = await Place.find()
         res.send(places)
@@ -57,6 +61,8 @@ const get = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
+    console.log("PlaceService.getById")
+
     const placeId = req.params.id
 
     try {
@@ -86,6 +92,8 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
+    console.log("PlaceService.update")
+
     const placeId = req.params.id
     const { accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url, googlePlacesRating, googlePlacesReviewCount, yelpRating, yelpReviewCount } = req.body
 
@@ -137,6 +145,8 @@ const update = async (req, res) => {
 
 // delete
 const remove = async (req, res) => {
+    console.log("PlaceService.remove")
+
     const placeId = req.params.id
 
     try {
@@ -184,6 +194,8 @@ const remove = async (req, res) => {
 
 // search
 const search = async (req, res) => {
+    console.log("PlaceService.search")
+
     var { text, location, latitude, longitude, radius, filters } = req.body
 
     console.log("req.body " + JSON.stringify(req.body))
@@ -476,6 +488,8 @@ async function getGooglePlaceDetails(placeid) {
 
 // migrate coordinates
 const migrate = async (req, res) => {
+    console.log("PlaceService.migrate")
+
     const { trigger, latitude, longitude, distance, query } = req.body
 
     var places

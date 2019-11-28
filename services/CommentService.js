@@ -6,6 +6,8 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
+    console.log("CommentService.create")
+
     const { listId, placeId, text, userId } = req.body
 
     if (!text) {
@@ -44,6 +46,8 @@ const create = async (req, res) => {
 
 // get
 const get = async (req, res) => {
+    console.log("CommentService.get")
+
     const query = url.parse(req.url, true).query
 
     try {
@@ -62,6 +66,8 @@ const get = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
+    console.log("CommentService.getById")
+
     const commentId = req.params.id
 
     try {
@@ -91,6 +97,8 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
+    console.log("CommentService.update")
+
     const commentId = req.params.id
     const { listId, placeId, text, userId } = req.body
 
@@ -126,6 +134,8 @@ const update = async (req, res) => {
 
 // delete
 const remove = async (req, res) => {
+    console.log("CommentService.remove")
+
     const commentId = req.params.id
 
     try {
