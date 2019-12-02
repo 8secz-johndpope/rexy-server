@@ -48,10 +48,10 @@ const create = async (req, res) => {
 const get = async (req, res) => {
     console.log("CommentService.get")
 
-    const query = url.parse(req.url, true).query
+    const q = url.parse(req.url, true).query
 
     try {
-        const comments = await Comment.find({ ...query }).populate('list').populate('place').populate('user')
+        const comments = await Comment.find({ ...q }).populate('list').populate('place').populate('user')
         res.send(comments)
 
     } catch(err) {
