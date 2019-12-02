@@ -198,7 +198,7 @@ const search = async (req, res) => {
 
     const q = url.parse(req.url, true).query
     var { query } = q
-
+    
     if (!query) {
         return res.status(500).send({
             message: "An error occurred while searching for Places "

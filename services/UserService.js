@@ -12,7 +12,7 @@ const _ = require('lodash')
 const create = async (req, res) => {
     console.log("UserService.create")
 
-    const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, phoneNumber, prefersUsername, receiveSubscriptionNotifications, subscribedListIds, username, visitedPlaceIds, xid } = req.body
+    var { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, notificationSettingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid } = req.body
 
     if (!xid) {
         return res.status(400).send({
@@ -20,7 +20,7 @@ const create = async (req, res) => {
         })
     }
 
-    const user = new User({ bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, phoneNumber, prefersUsername, receiveSubscriptionNotifications, subscribedListIds, username, visitedPlaceIds, xid })
+    const user = new User({ bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, notificationSettingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid })
 
     try {
         const savedUser = await user.save()
@@ -105,7 +105,7 @@ const update = async (req, res) => {
     console.log("UserService.update")
 
     const userId = req.params.id
-    const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, phoneNumber, prefersUsername, receiveSubscriptionNotifications, subscribedListIds, username, visitedPlaceIds, xid } = req.body
+    const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, notificationSettingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid } = req.body
 
     try {
         const user = await User.findByIdAndUpdate(userId, _.omitBy({
@@ -115,9 +115,9 @@ const update = async (req, res) => {
             isVerified,
             lastName,
             listIds,
+            notificationSettingsId,
             phoneNumber,
             prefersUsername,
-            receiveSubscriptionNotifications,
             subscribedListIds,
             username,
             visitedPlaceIds,
@@ -159,6 +159,12 @@ const remove = async (req, res) => {
                 message: "User not found with id " + userId
             })
         }
+
+        NotificationSettings.deleteMany({ userId }, function (err) {
+            if (err) {
+                console.log("NotificationSettings.deleteMany err" + err)
+            }
+        })
 
         Comment.deleteMany({ userId }, function (err) {
             if (err) {
@@ -610,7 +616,7 @@ const register = async (req, res) => {
 
     var notificationSettingsId
 
-    const notificationSettings = new NotificationSettings({ deviceToken })
+    const notificationSettings = new NotificationSettings({ deviceToken, userId })
     try {
         const savedSettings = await notificationSettings.save()
         notificationSettingsId = savedSettings._id
