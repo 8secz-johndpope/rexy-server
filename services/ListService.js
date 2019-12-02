@@ -54,6 +54,49 @@ const get = async (req, res) => {
 }
 
 
+// get top
+const getTop = async (req, res) => {
+    console.log("ListService.getTop")
+
+    List.aggregate([
+        {
+            "$project": {
+                "createdAt": 1,
+                "updatedAt": 1,
+                "_id": 1,
+                "accoladesYear": 1,
+                "authorIds": 1,
+                "date": 1,
+                "dateBasedAccolades": 1,
+                "description": 1,
+                "groupName": 1,
+                "isDeleted": 1,
+                "isPrivate": 1,
+                "placeIds": 1,
+                "subscriberIds": 1,
+                "title": 1,
+                "authors": 1,
+                "places": 1,
+                "subscribers": 1,
+                "subscriberCount": { "$size": "$subscriberIds"}
+            }
+        },
+        {
+            "$sort": { "subscriberCount": - 1, "updatedAt": -1 }
+        }
+    ], function (err, results) {
+        if (err) {
+            res.status(500).send({
+                message: err.message || "An error occurred while retrieving Top Lists."
+            })
+
+        } else {
+            res.send(results)
+        }
+    })
+}
+
+
 // get by id
 const getById = async (req, res) => {
     console.log("ListService.getById")
@@ -651,4 +694,4 @@ const removeSubscriber = async (req, res) => {
 }
 
 
-module.exports = { create, get, getById, update, remove, search, addAuthor, removeAuthor, getComments, addPlace, removePlace, addSubscriber, removeSubscriber }
+module.exports = { create, get, getTop, getById, update, remove, search, addAuthor, removeAuthor, getComments, addPlace, removePlace, addSubscriber, removeSubscriber }

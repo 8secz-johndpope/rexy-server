@@ -4,6 +4,7 @@ module.exports = (app) => {
     // crud
     app.post('/lists', lists.create)
     app.get('/lists', lists.get)
+    app.get('/lists/top', lists.getTop)
     app.get('/lists/:id', lists.getById)
     app.patch('/lists/:id', lists.update)
     app.delete('/lists/:id', lists.remove)
