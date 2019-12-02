@@ -85,7 +85,7 @@ const getTop = async (req, res) => {
             }
         },
         {
-            "$sort": { "subscriberCount": - 1, "updatedAt": -1 }
+            "$sort": { "subscriberCount": -1, "updatedAt": -1 }
         }
     ], function (err, results) {
         if (err) {
