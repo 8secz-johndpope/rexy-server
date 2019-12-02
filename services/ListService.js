@@ -40,8 +40,28 @@ const create = async (req, res) => {
 const get = async (req, res) => {
     console.log("ListService.get")
 
+    const q = url.parse(req.url, true).query
+    const { limit, sort } = q
+
     try {
-        const lists = await List.find()
+        var lists = await List.find()
+
+        if (sort && sort.includes("subscriberCount")) {
+            lists.sort(function(a, b) {
+                const aObject = sort.charAt(0) === "-" ? b : a
+                const bObject = sort.charAt(0) === "-" ? a : b
+
+                const aValue = aObject.subscriberIds.length === bObject.subscriberIds.length ? aObject.updatedAt : aObject.subscriberIds.length
+                const bValue = aObject.subscriberIds.length === bObject.subscriberIds.length ? bObject.updatedAt : bObject.subscriberIds.length
+
+                return aValue - bValue
+            })
+        }
+
+        if (limit) {
+            lists = lists.slice(0, limit)
+        }
+
         res.send(lists)
         
     } catch (err) {
@@ -51,52 +71,6 @@ const get = async (req, res) => {
             message: err.message || "An error occurred while retrieving Lists."
         })
     }
-}
-
-
-// get top
-const getTop = async (req, res) => {
-    console.log("ListService.getTop")
-
-    List.aggregate([
-        {
-            "$match": { "isPrivate": { "$ne": true }, "isDeleted": { "$ne": true } },
-        },
-        {
-            "$project": {
-                "createdAt": 1,
-                "updatedAt": 1,
-                "_id": 1,
-                "accoladesYear": 1,
-                "authorIds": 1,
-                "date": 1,
-                "dateBasedAccolades": 1,
-                "description": 1,
-                "groupName": 1,
-                "isDeleted": 1,
-                "isPrivate": 1,
-                "placeIds": 1,
-                "subscriberIds": 1,
-                "title": 1,
-                "authors": 1,
-                "places": 1,
-                "subscribers": 1,
-                "subscriberCount": { "$size": "$subscriberIds"}
-            }
-        },
-        {
-            "$sort": { "subscriberCount": -1, "updatedAt": -1 }
-        }
-    ], function (err, results) {
-        if (err) {
-            res.status(500).send({
-                message: err.message || "An error occurred while retrieving Top Lists."
-            })
-
-        } else {
-            res.send(results)
-        }
-    })
 }
 
 
@@ -697,4 +671,4 @@ const removeSubscriber = async (req, res) => {
 }
 
 
-module.exports = { create, get, getTop, getById, update, remove, search, addAuthor, removeAuthor, getComments, addPlace, removePlace, addSubscriber, removeSubscriber }
+module.exports = { create, get, getById, update, remove, search, addAuthor, removeAuthor, getComments, addPlace, removePlace, addSubscriber, removeSubscriber }
