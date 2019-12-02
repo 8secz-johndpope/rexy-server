@@ -60,6 +60,9 @@ const getTop = async (req, res) => {
 
     List.aggregate([
         {
+            "$match": { "isPrivate": { "$ne": true }, "isDeleted": { "$ne": true } },
+        },
+        {
             "$project": {
                 "createdAt": 1,
                 "updatedAt": 1,
