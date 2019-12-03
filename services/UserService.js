@@ -3,9 +3,59 @@ const List = require('../models/List.js')
 const NotificationSettings = require('../models/NotificationSettings.js')
 const User = require('../models/User.js')
 
+const fs = require('fs')
+const https = require('https')
+const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
 const url = require('url');
 const _ = require('lodash')
+
+
+// authenticate
+const authenticate = async (req, res) => {
+    console.log("UserService.authenticate")
+
+    const { token } = req.body
+
+    if (!token) {
+        return res.status(400).send({
+            message: "No JWT provided."
+        })
+    }
+
+    const { iss, aud, exp, sub, email } = jwt.decode(token, { json: true })
+    const xid = sub
+    const emailAddress = email
+
+    // verify signature somehow
+    // verify nonce somehow
+
+    if (!iss.includes(process.env.JWT_ISSUER)) {
+        return res.status(401).send({
+            message: "Authentication failed due to incorrect issuer."
+        })
+    }
+
+    if (aud !== process.env.JWT_AUDIENCE) {
+        return res.status(401).send({
+            message: "Authentication failed due to incorrect audience."
+        })
+    }
+
+    if (Date.now() >= exp * 1000) {
+        return res.status(401).send({
+            message: "Authentication failed due to expired token."
+        })
+    }
+
+    const user = await User.findOneAndUpdate({ xid }, { emailAddress }, {new: true}).select('-xid').select('-notificationSettings')
+    if (!user) {
+        return res.status(404).send({
+            message: "User not found with xid " + userId
+        })
+    }
+    res.send(user)
+}
 
 
 // create
@@ -647,4 +697,4 @@ const register = async (req, res) => {
     res.send(updatedUser)
 }
 
-module.exports = { create, get, getById, update, remove, getLists, getSubscriptions, addBookmark, getBookmarks, removeBookmark, addVisited, getVisited, removeVisited, register }
+module.exports = { authenticate, create, get, getById, update, remove, getLists, getSubscriptions, addBookmark, getBookmarks, removeBookmark, addVisited, getVisited, removeVisited, register }

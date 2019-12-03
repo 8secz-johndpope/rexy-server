@@ -1,6 +1,9 @@
 module.exports = (app) => {
     const users = require('../services/UserService.js')
 
+    // auth
+    app.post('/users/authenticate', users.authenticate)
+
     // crud
     app.post('/users', users.create)
     app.get('/users', users.get)
