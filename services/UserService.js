@@ -89,9 +89,12 @@ const get = async (req, res) => {
     console.log("UserService.get")
 
     const q = url.parse(req.url, true).query
+    const { username } = q
+
+    console.log("username " + username)
 
     try {
-        const users = await User.find({ ...q }).select('-xid').select('-notificationSettings')
+        const users = await User.find({ username: new RegExp(`^${username}$`, 'i') }).select('-xid').select('-notificationSettings')
         res.send(users)
 
     } catch (err) {
