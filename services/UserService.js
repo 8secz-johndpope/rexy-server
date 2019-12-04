@@ -3,8 +3,6 @@ const List = require('../models/List.js')
 const NotificationSettings = require('../models/NotificationSettings.js')
 const User = require('../models/User.js')
 
-const fs = require('fs')
-const https = require('https')
 const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
 const url = require('url');
@@ -90,8 +88,10 @@ const create = async (req, res) => {
 const get = async (req, res) => {
     console.log("UserService.get")
 
+    const q = url.parse(req.url, true).query
+
     try {
-        const users = await User.find().select('-xid').select('-notificationSettings')
+        const users = await User.find({ ...q }).select('-xid').select('-notificationSettings')
         res.send(users)
 
     } catch (err) {
