@@ -3,8 +3,11 @@ const List = require('../models/List.js')
 const NotificationSettings = require('../models/NotificationSettings.js')
 const User = require('../models/User.js')
 
+const aws = require('aws-sdk')
 const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
+const multer = require('multer')
+const multerS3 = require('multer-s3')
 const url = require('url');
 const _ = require('lodash')
 
@@ -248,6 +251,35 @@ const remove = async (req, res) => {
         })
     }
 }
+
+
+// upload image
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'image/heic' || file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+        cb(null, true)
+    } else {
+        cb(new Error(`Invalid file type (${file.mimetype}), only HEIC, JPEG, and PNG are allowed.`))
+    }
+}
+
+aws.config.update({
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    region: process.env.AWS_REGION
+})
+
+const s3 = new aws.S3()
+
+const storage = multerS3({
+    acl: 'public-read-write',
+    s3,
+    bucket: process.env.AWS_BUCKET_NAME,
+    key: function (req, file, cb) {
+        cb(null, "users/" + req.params.id)
+    }
+})
+
+const uploadImage = multer({ fileFilter, storage }).single('image')
 
 
 // user lists
@@ -702,4 +734,4 @@ const register = async (req, res) => {
     res.send(updatedUser)
 }
 
-module.exports = { authenticate, create, get, getById, update, remove, getLists, getSubscriptions, addBookmark, getBookmarks, removeBookmark, addVisited, getVisited, removeVisited, register }
+module.exports = { authenticate, create, get, getById, update, remove, uploadImage, getLists, getSubscriptions, addBookmark, getBookmarks, removeBookmark, addVisited, getVisited, removeVisited, register }

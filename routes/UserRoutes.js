@@ -1,4 +1,5 @@
 module.exports = (app) => {
+    const User = require('../models/User.js')
     const users = require('../services/UserService.js')
 
     // auth
@@ -10,6 +11,35 @@ module.exports = (app) => {
     app.get('/users/:id', users.getById)
     app.patch('/users/:id', users.update)
     app.delete('/users/:id', users.remove)
+
+    // image
+    app.post('/users/:id/image', users.uploadImage, async (req, res) => {
+        const userId = req.params.id
+        const imagePath = req.file.location
+        
+        try {
+            const updatedUser = await User.findByIdAndUpdate(userId, { imagePath }, { new: true }).select('-xid').select('-notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+            if (!updatedUser) {
+                return res.status(404).send({
+                    message: "User not found with id " + userId
+                })
+            }
+            res.send(updatedUser)
+            
+        } catch (err) {
+            console.log("UserService.uploadImage " + userId + err)
+
+            if (err.kind === 'ObjectId') {
+                return res.status(404).send({
+                    message: "User not found with id " + userId
+                })
+            }
+    
+            return res.status(500).send({
+                message: "An error occurred while uploading an image to User with id " + userId
+            })
+        }
+    })
 
     // user lists and subscriptions
     app.get('/users/:id/lists', users.getLists)
