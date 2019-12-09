@@ -282,6 +282,57 @@ const storage = multerS3({
 const uploadImage = multer({ fileFilter, storage }).single('image')
 
 
+// remove image
+const removeImage = async (req, res) => {
+    const userId = req.params.id
+
+    const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: "users/" + userId }
+
+    try {
+        await s3.deleteObject(params).promise()
+        const image = await s3.getObject(params).promise()
+        if (image) {
+            return res.status(500).send({
+                message: err.message || "An error occurred while removing an image from User with id " + userId
+            })
+        }
+
+    } catch (err) {
+        if (err.code === 'NoSuchKey') {
+            try {
+                const updatedUser = await User.findByIdAndUpdate(userId, { imagePath: null }, { new: true }).select('-xid').select('-notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+                if (!updatedUser) {
+                    return res.status(404).send({
+                        message: "User not found with id " + userId
+                    })
+                }
+                res.send(updatedUser)
+
+            } catch (err) {
+                console.log("UserService.removeImage " + userId + err)
+
+                if (err.kind === 'ObjectId') {
+                    return res.status(404).send({
+                        message: "User not found with id " + userId
+                    })
+                }
+
+                return res.status(500).send({
+                    message: "An error occurred while removing an image from User with id " + userId
+                })
+            }
+
+        } else {
+            console.log("UserService.removeImage " + userId + err)
+            
+            return res.status(500).send({
+                message: err.message || "An error occurred while removing an image from User with id " + userId
+            })
+        }
+    }
+}
+
+
 // user lists
 const getLists = async (req, res) => {
     console.log("UserService.getLists")
@@ -734,4 +785,4 @@ const register = async (req, res) => {
     res.send(updatedUser)
 }
 
-module.exports = { authenticate, create, get, getById, update, remove, uploadImage, getLists, getSubscriptions, addBookmark, getBookmarks, removeBookmark, addVisited, getVisited, removeVisited, register }
+module.exports = { authenticate, create, get, getById, update, remove, uploadImage, removeImage, getLists, getSubscriptions, addBookmark, getBookmarks, removeBookmark, addVisited, getVisited, removeVisited, register }

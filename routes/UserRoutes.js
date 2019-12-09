@@ -14,6 +14,8 @@ module.exports = (app) => {
 
     // image
     app.post('/users/:id/image', users.uploadImage, async (req, res) => {
+        console.log("UserService.uploadImage")
+
         const userId = req.params.id
         const imagePath = req.file.location
         
@@ -40,6 +42,7 @@ module.exports = (app) => {
             })
         }
     })
+    app.delete('/users/:id/image', users.removeImage)
 
     // user lists and subscriptions
     app.get('/users/:id/lists', users.getLists)
