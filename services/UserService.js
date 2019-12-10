@@ -252,7 +252,6 @@ const remove = async (req, res) => {
     }
 }
 
-
 // upload image
 const fileFilter = (req, file, cb) => {
     if (file.mimetype === 'image/heic' || file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
@@ -275,7 +274,7 @@ const storage = multerS3({
     s3,
     bucket: process.env.AWS_BUCKET_NAME,
     key: function (req, file, cb) {
-        cb(null, "users/" + req.params.id)
+        cb(null, "users/" + req.params.id + "-" + Date.now().toString())
     }
 })
 
