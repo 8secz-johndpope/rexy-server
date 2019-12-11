@@ -8,6 +8,7 @@ const ListSchema = mongoose.Schema({
     dateBasedAccolades: { type: Boolean, default: false, es_indexed: false },
     description: { type: String, es_indexed: true },
     groupName: { type: String, es_indexed: false },
+    imagePath: { type: String , es_indexed: false },
     isDeleted: { type: Boolean, default: false, es_indexed: false },
     isPrivate: { type: Boolean, default: false, es_indexed: false },
     placeIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place", es_indexed: false }],

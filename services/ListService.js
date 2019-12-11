@@ -3,7 +3,10 @@ const List = require('../models/List.js')
 const User = require('../models/User.js')
 const APNSProvider = require('../services/NotificationService.js')
 
+const aws = require('aws-sdk')
 const mongoose = require('mongoose')
+const multer = require('multer')
+const multerS3 = require('multer-s3')
 const url = require('url');
 const _ = require('lodash')
 
@@ -217,6 +220,86 @@ const search = async (req, res) => {
         }
         res.send(results.hits.hits)
     })
+}
+
+
+// upload image
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'image/heic' || file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+        cb(null, true)
+    } else {
+        cb(new Error(`Invalid file type (${file.mimetype}), only HEIC, JPEG, and PNG are allowed.`))
+    }
+}
+
+aws.config.update({
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    region: process.env.AWS_REGION
+})
+
+const s3 = new aws.S3()
+
+const storage = multerS3({
+    acl: 'public-read-write',
+    s3,
+    bucket: process.env.AWS_BUCKET_NAME,
+    key: function (req, file, cb) {
+        cb(null, "lists/" + req.params.id + "-" + Date.now().toString())
+    }
+})
+
+const uploadImage = multer({ fileFilter, storage }).single('image')
+
+
+// remove image
+const removeImage = async (req, res) => {
+    const listId = req.params.id
+
+    const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: "lists/" + listId }
+
+    try {
+        await s3.deleteObject(params).promise()
+        const image = await s3.getObject(params).promise()
+        if (image) {
+            return res.status(500).send({
+                message: err.message || "An error occurred while removing an image from List with id " + listId
+            })
+        }
+
+    } catch (err) {
+        if (err.code === 'NoSuchKey') {
+            try {
+                const updatedList = await List.findByIdAndUpdate(listId, { imagePath: null }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
+                if (!updatedList) {
+                    return res.status(404).send({
+                        message: "List not found with id " + listId
+                    })
+                }
+                res.send(updatedList)
+
+            } catch (err) {
+                console.log("ListService.removeImage " + listId + err)
+
+                if (err.kind === 'ObjectId') {
+                    return res.status(404).send({
+                        message: "List not found with id " + listId
+                    })
+                }
+
+                return res.status(500).send({
+                    message: "An error occurred while removing an image from List with id " + listId
+                })
+            }
+
+        } else {
+            console.log("ListService.removeImage " + listId + err)
+            
+            return res.status(500).send({
+                message: err.message || "An error occurred while removing an image from List with id " + listId
+            })
+        }
+    }
 }
 
 
@@ -671,4 +754,4 @@ const removeSubscriber = async (req, res) => {
 }
 
 
-module.exports = { create, get, getById, update, remove, search, addAuthor, removeAuthor, getComments, addPlace, removePlace, addSubscriber, removeSubscriber }
+module.exports = { create, get, getById, update, remove, search, uploadImage, removeImage, addAuthor, removeAuthor, getComments, addPlace, removePlace, addSubscriber, removeSubscriber }
