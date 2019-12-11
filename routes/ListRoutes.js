@@ -23,24 +23,33 @@ module.exports = (app) => {
         const imagePath = req.file.location
 
         try {
-            var list = await List.findById(listId)
+            const list = await List.findById(listId)
+            if (!list) {
+                return res.status(404).send({
+                    message: "List not found with id " + listId
+                })
+            }
 
-            aws.config.update({
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                region: process.env.AWS_REGION
-            })
+            if (list.imagePath) {
+                aws.config.update({
+                    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+                    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                    region: process.env.AWS_REGION
+                })
+    
+                const s3 = new aws.S3()
 
-            const s3 = new aws.S3()
-
-            if (!list.imagePath) {
-                const oldImagePath = list.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
-                const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldImagePath }
+                const oldKey = list.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
+                const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey }
                 await s3.deleteObject(params).promise()
             }
 
-            list.imagePath = imagePath
-            const updatedList = await list.save()
+            const updatedList = await List.findByIdAndUpdate(listId, { imagePath }, { new: true })
+            if (!updatedList) {
+                return res.status(404).send({
+                    message: "List not found with id " + listId
+                })
+            }
             res.send(updatedList)
             
         } catch (err) {

@@ -23,21 +23,33 @@ module.exports = (app) => {
         const imagePath = req.file.location
         
         try {
-            var user = await User.findById(userId).select('-xid')
+            var user = await User.findById(userId)
+            if (!user) {
+                return res.status(404).send({
+                    message: "User not found with id " + userId
+                })
+            }
 
-            aws.config.update({
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                region: process.env.AWS_REGION
-            })
+            if (user.imagePath) {
+                aws.config.update({
+                    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+                    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                    region: process.env.AWS_REGION
+                })
+    
+                const s3 = new aws.S3()
 
-            const s3 = new aws.S3()
-            const oldImagePath = user.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
-            const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldImagePath }
-            await s3.deleteObject(params).promise()
+                const oldKey = user.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
+                const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey }
+                await s3.deleteObject(params).promise()
+            }
 
-            user.imagePath = imagePath
-            const updatedUser = await user.save()
+            const updatedUser = await User.findByIdAndUpdate(userId, { imagePath }, { new: true }).select('-xid').select('-notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+            if (!updatedUser) {
+                return res.status(404).send({
+                    message: "User not found with id " + userId
+                })
+            }
             res.send(updatedUser)
             
         } catch (err) {

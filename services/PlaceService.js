@@ -3,8 +3,11 @@ const List = require('../models/List.js')
 const Place = require('../models/Place.js')
 const User = require('../models/User.js')
 
+const aws = require('aws-sdk')
 const GooglePlaces = require('@google/maps').createClient({ key: process.env.GOOGLE_PLACES_API_KEY, Promise: Promise});
 const mongoose = require('mongoose')
+const multer = require('multer')
+const multerS3 = require('multer-s3')
 const Yelp = require('yelp-fusion').client(process.env.YELP_API_KEY)
 const _ = require('lodash')
 
@@ -486,6 +489,75 @@ async function getGooglePlaceDetails(placeid) {
 }
 
 
+// upload image
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'image/heic' || file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+        cb(null, true)
+    } else {
+        cb(new Error(`Invalid file type (${file.mimetype}), only HEIC, JPEG, and PNG are allowed.`))
+    }
+}
+
+aws.config.update({
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    region: process.env.AWS_REGION
+})
+
+const s3 = new aws.S3()
+
+const storage = multerS3({
+    acl: 'public-read-write',
+    s3,
+    bucket: process.env.AWS_BUCKET_NAME,
+    key: function (req, file, cb) {
+        cb(null, "places/" + req.params.id + "-" + Date.now().toString())
+    }
+})
+
+const uploadImage = multer({ fileFilter, storage }).single('image')
+
+
+// remove image
+const removeImage = async (req, res) => {
+    console.log("PlaceService.removeImage")
+
+    const placeId = req.params.id
+
+    try {
+        var place = await Place.findById(placeId)
+        if (!place) {
+            return res.status(404).send({
+                message: "Place not found with id " + placeId
+            })
+        }
+
+        if (!place.imagePath) {
+            return res.send(place)
+        }
+
+        const oldKey = list.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
+        const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey }
+        await s3.deleteObject(params).promise()
+
+        const updatedPlace = await Place.findByIdAndUpdate(placeId, { imagePath: null }, { new: true })
+        if (!updatedPlace) {
+            return res.status(404).send({
+                message: "Place not found with id " + placeId
+            })
+        }
+        res.send(updatedPlace)
+
+    } catch (err) {
+        console.log("PlaceService.removeImage " + placeId + err)
+        
+        return res.status(500).send({
+            message: err.message || "An error occurred while removing an image from List with id " + placeId
+        })
+    }
+}
+
+
 // migrate coordinates
 const migrate = async (req, res) => {
     console.log("PlaceService.migrate")
@@ -558,4 +630,4 @@ async function migration(place) {
 }
 
 
-module.exports = { create, get, getById, update, remove, search, migrate }
+module.exports = { create, get, getById, update, remove, search, uploadImage, removeImage, migrate }

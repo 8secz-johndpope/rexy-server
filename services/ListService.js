@@ -254,51 +254,40 @@ const uploadImage = multer({ fileFilter, storage }).single('image')
 
 // remove image
 const removeImage = async (req, res) => {
+    console.log("ListService.removeImage")
+
     const listId = req.params.id
 
-    const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: "lists/" + listId }
-
     try {
-        await s3.deleteObject(params).promise()
-        const image = await s3.getObject(params).promise()
-        if (image) {
-            return res.status(500).send({
-                message: err.message || "An error occurred while removing an image from List with id " + listId
+        var list = await List.findById(listId)
+        if (!list) {
+            return res.status(404).send({
+                message: "List not found with id " + listId
             })
         }
+
+        if (!list.imagePath) {
+            return res.send(list)
+        }
+
+        const oldKey = list.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
+        const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey }
+        await s3.deleteObject(params).promise()
+
+        const updatedList = await List.findByIdAndUpdate(listId, { imagePath: null }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
+        if (!updatedList) {
+            return res.status(404).send({
+                message: "List not found with id " + listId
+            })
+        }
+        res.send(updatedList)
 
     } catch (err) {
-        if (err.code === 'NoSuchKey') {
-            try {
-                const updatedList = await List.findByIdAndUpdate(listId, { imagePath: null }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
-                if (!updatedList) {
-                    return res.status(404).send({
-                        message: "List not found with id " + listId
-                    })
-                }
-                res.send(updatedList)
-
-            } catch (err) {
-                console.log("ListService.removeImage " + listId + err)
-
-                if (err.kind === 'ObjectId') {
-                    return res.status(404).send({
-                        message: "List not found with id " + listId
-                    })
-                }
-
-                return res.status(500).send({
-                    message: "An error occurred while removing an image from List with id " + listId
-                })
-            }
-
-        } else {
-            console.log("ListService.removeImage " + listId + err)
-            
-            return res.status(500).send({
-                message: err.message || "An error occurred while removing an image from List with id " + listId
-            })
-        }
+        console.log("ListService.removeImage " + listId + err)
+        
+        return res.status(500).send({
+            message: err.message || "An error occurred while removing an image from List with id " + listId
+        })
     }
 }
 
@@ -343,7 +332,6 @@ const addAuthor = async (req, res) => {
         }
 
         var authorIds = list.authorIds || []
-        console.log("authorIds " + authorIds)
         authorIds.addToSet(userId)
 
         var listIds = user.listIds

@@ -283,51 +283,40 @@ const uploadImage = multer({ fileFilter, storage }).single('image')
 
 // remove image
 const removeImage = async (req, res) => {
+    console.log("UserService.removeImage")
+
     const userId = req.params.id
 
-    const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: "users/" + userId }
-
     try {
-        await s3.deleteObject(params).promise()
-        const image = await s3.getObject(params).promise()
-        if (image) {
-            return res.status(500).send({
-                message: err.message || "An error occurred while removing an image from User with id " + userId
+        const user = await User.findById(userId).select("-xid")
+        if (!user) {
+            return res.status(404).send({
+                message: "User not found with id " + userId
             })
         }
+
+        if (!user.imagePath) {
+            return res.send(user)
+        }
+
+        const oldKey = user.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
+        const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey }
+        await s3.deleteObject(params).promise()
+
+        const updatedUser = await User.findByIdAndUpdate(userId, { imagePath: null }, { new: true }).select('-xid').select('-notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        if (!updatedUser) {
+            return res.status(404).send({
+                message: "User not found with id " + userId
+            })
+        }
+        res.send(updatedUser)
 
     } catch (err) {
-        if (err.code === 'NoSuchKey') {
-            try {
-                const updatedUser = await User.findByIdAndUpdate(userId, { imagePath: null }, { new: true }).select('-xid').select('-notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
-                if (!updatedUser) {
-                    return res.status(404).send({
-                        message: "User not found with id " + userId
-                    })
-                }
-                res.send(updatedUser)
-
-            } catch (err) {
-                console.log("UserService.removeImage " + userId + err)
-
-                if (err.kind === 'ObjectId') {
-                    return res.status(404).send({
-                        message: "User not found with id " + userId
-                    })
-                }
-
-                return res.status(500).send({
-                    message: "An error occurred while removing an image from User with id " + userId
-                })
-            }
-
-        } else {
-            console.log("UserService.removeImage " + userId + err)
-            
-            return res.status(500).send({
-                message: err.message || "An error occurred while removing an image from User with id " + userId
-            })
-        }
+        console.log("ListService.removeImage " + userId + err)
+        
+        return res.status(500).send({
+            message: err.message || "An error occurred while removing an image from List with id " + userId
+        })
     }
 }
 
@@ -605,7 +594,7 @@ const addVisited = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(userId, {
             visitedPlaceIds: placeIds
-        }, { new: true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+        }, { new: true }).select('-xid').select('-notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
         if (!updatedUser) {
             return res.status(404).send({
                 message: "User not found with id " + userId
@@ -767,7 +756,7 @@ const register = async (req, res) => {
 
     var updatedUser = await User.findByIdAndUpdate(userId, {
         notificationSettingsId
-    }, { new: true }).select('-xid').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces').populate('notificationSettings')
+    }, { new: true }).select('-xid').select('-notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
 
     if (!updatedUser) {
         return res.status(404).send({
