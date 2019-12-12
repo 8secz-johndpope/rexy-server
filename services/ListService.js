@@ -15,7 +15,7 @@ const _ = require('lodash')
 const create = async (req, res) => {
     console.log("ListService.create")
 
-    const { accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, isDeleted, isPrivate, placeIds, subscriberIds, title } = req.body
+    const { accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, imagePath, isDeleted, isPrivate, placeIds, subscriberIds, title } = req.body
 
     if (!title) {
         return res.status(400).send({
@@ -23,7 +23,7 @@ const create = async (req, res) => {
         })
     }
 
-    const list = new List({ accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, isDeleted, isPrivate, placeIds, subscriberIds, title })
+    const list = new List({ accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, imagePath, isDeleted, isPrivate, placeIds, subscriberIds, title })
 
     try {
         const savedList = await list.save()
@@ -113,7 +113,7 @@ const update = async (req, res) => {
     console.log("ListService.update")
 
     const listId = req.params.id
-    const { accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, isDeleted, isPrivate, placeIds, subscriberIds, title } = req.body
+    const { accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, imagePath, isDeleted, isPrivate, placeIds, subscriberIds, title } = req.body
 
     try {
         const list = await List.findByIdAndUpdate(listId, _.omitBy({
@@ -123,6 +123,7 @@ const update = async (req, res) => {
             dateBasedAccolades,
             description,
             groupName,
+            imagePath,
             isDeleted,
             isPrivate,
             placeIds,

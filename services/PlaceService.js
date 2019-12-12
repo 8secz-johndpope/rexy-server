@@ -16,7 +16,7 @@ const _ = require('lodash')
 const create = async (req, res) => {
     console.log("PlaceService.create")
 
-    var { accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url, googlePlacesRating, googlePlacesReviewCount, yelpRating, yelpReviewCount } = req.body
+    var { accolades, address, geo_coordinate, hours, imagePath, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url, googlePlacesRating, googlePlacesReviewCount, yelpRating, yelpReviewCount } = req.body
 
     if (!type && isClean) {
         isClean = false
@@ -28,7 +28,7 @@ const create = async (req, res) => {
         })
     }
 
-    const place = new Place({ accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url, googlePlacesRating, googlePlacesReviewCount, yelpRating, yelpReviewCount })
+    const place = new Place({ accolades, address, geo_coordinate, hours, imagePath, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url, googlePlacesRating, googlePlacesReviewCount, yelpRating, yelpReviewCount })
 
     try {
         const savedPlace = await place.save()
@@ -98,7 +98,7 @@ const update = async (req, res) => {
     console.log("PlaceService.update")
 
     const placeId = req.params.id
-    const { accolades, address, geo_coordinate, hours, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url, googlePlacesRating, googlePlacesReviewCount, yelpRating, yelpReviewCount } = req.body
+    const { accolades, address, geo_coordinate, hours, imagePath, isClean, isOpen, notes, otherLists, phoneNumber, price, specialty, subtitle, tags, title, type, url, googlePlacesRating, googlePlacesReviewCount, yelpRating, yelpReviewCount } = req.body
 
     try {
         const place = await Place.findByIdAndUpdate(req.params.id, _.omitBy({
@@ -106,6 +106,7 @@ const update = async (req, res) => {
             address,
             geo_coordinate,
             hours,
+            imagePath,
             isClean,
             isOpen,
             notes,
@@ -536,7 +537,7 @@ const removeImage = async (req, res) => {
             return res.send(place)
         }
 
-        const oldKey = list.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
+        const oldKey = place.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
         const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey }
         await s3.deleteObject(params).promise()
 

@@ -52,6 +52,7 @@ const PlaceSchema = mongoose.Schema({
     address: { type: AddressSchema, es_schema: AddressSchema, es_indexed: true, es_select: 'formatted' },
     geo_coordinate: { geo_point: { type: String, es_indexed: true, es_type: 'geo_point' }, lat: { type: Number, min: -90, max: 90 }, lon: { type: Number, min: -180, max: 180 } },
     hours: { type: HoursOfServiceSchema, es_indexed: false },
+    imagePath: { type: String, es_indexed: false },
     isClean: { type: Boolean, default: false, es_indexed: false },
     isOpen: { type: Boolean, default: true, es_indexed: true },
     notes: { type: String, es_indexed: true },

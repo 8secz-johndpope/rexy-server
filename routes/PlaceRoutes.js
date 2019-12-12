@@ -44,6 +44,8 @@ module.exports = (app) => {
                 await s3.deleteObject(params).promise()
             }
 
+            console.log("imagePath", imagePath)
+
             const updatedPlace = await Place.findByIdAndUpdate(placeId, { imagePath }, { new: true })
             if (!updatedPlace) {
                 return res.status(404).send({

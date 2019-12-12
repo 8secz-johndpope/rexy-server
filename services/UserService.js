@@ -63,7 +63,7 @@ const authenticate = async (req, res) => {
 const create = async (req, res) => {
     console.log("UserService.create")
 
-    var { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, notificationSettingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid } = req.body
+    var { bookmarkedPlaceIds, emailAddress, firstName, imagePath, isVerified, lastName, listIds, notificationSettingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid } = req.body
 
     if (!xid) {
         return res.status(400).send({
@@ -71,7 +71,7 @@ const create = async (req, res) => {
         })
     }
 
-    const user = new User({ bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, notificationSettingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid })
+    const user = new User({ bookmarkedPlaceIds, emailAddress, firstName, imagePath, isVerified, lastName, listIds, notificationSettingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid })
 
     try {
         const savedUser = await user.save()
@@ -163,13 +163,14 @@ const update = async (req, res) => {
     console.log("UserService.update")
 
     const userId = req.params.id
-    const { bookmarkedPlaceIds, emailAddress, firstName, isVerified, lastName, listIds, notificationSettingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid } = req.body
+    const { bookmarkedPlaceIds, emailAddress, firstName, imagePath, isVerified, lastName, listIds, notificationSettingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid } = req.body
 
     try {
         const user = await User.findByIdAndUpdate(userId, _.omitBy({
             bookmarkedPlaceIds,
             emailAddress,
             firstName,
+            imagePath,
             isVerified,
             lastName,
             listIds,
