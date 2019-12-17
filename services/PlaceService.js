@@ -50,6 +50,7 @@ const get = async (req, res) => {
 
     try {
         const places = await Place.find()
+        .select('-googlePlacesRating -googlePlacesReviewCount -yelpRating -yelpReviewCount')
         res.send(places)
 
     } catch(err) {
@@ -70,6 +71,7 @@ const getById = async (req, res) => {
 
     try {
         const place = await Place.findById(placeId)
+        .select('-googlePlacesRating -googlePlacesReviewCount -yelpRating -yelpReviewCount')
         if (!place) {
             return res.status(404).send({
                 message: `Place not found with id ${placeId}`
@@ -124,6 +126,7 @@ const update = async (req, res) => {
             yelpRating,
             yelpReviewCount
         }, _.isUndefined), { new: true })
+        .select('-googlePlacesRating -googlePlacesReviewCount -yelpRating -yelpReviewCount')
         if (!place) {
             return res.status(404).send({
                 message: `Place not found with id ${placeId}`
@@ -526,6 +529,7 @@ const removeImage = async (req, res) => {
 
     try {
         var place = await Place.findById(placeId)
+        .select('-googlePlacesRating -googlePlacesReviewCount -yelpRating -yelpReviewCount')
         if (!place) {
             return res.status(404).send({
                 message: `Place not found with id ${placeId}`
@@ -541,6 +545,7 @@ const removeImage = async (req, res) => {
         await s3.deleteObject(params).promise()
 
         const updatedPlace = await Place.findByIdAndUpdate(placeId, { imagePath: null }, { new: true })
+        .select('-googlePlacesRating -googlePlacesReviewCount -yelpRating -yelpReviewCount')
         if (!updatedPlace) {
             return res.status(404).send({
                 message: `Place not found with id ${placeId}`

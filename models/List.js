@@ -37,14 +37,6 @@ ListSchema.virtual('subscribers', {
     foreignField: '_id'
 })
 
-// ListSchema.pre('find', function() {
-//     this.populate('authors').populate('-notificationSettings')
-// })
-
-// ListSchema.pre('findOne', function() {
-//     this.populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
-// })
-
 ListSchema.set('toObject', { virtuals: true })
 ListSchema.set('toJSON', { virtuals: true })
 

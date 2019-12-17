@@ -48,6 +48,7 @@ const get = async (req, res) => {
 
     try {
         var lists = await List.find()
+        .populate('authors')
 
         if (sort && sort.includes("subscriberCount")) {
             lists.sort(function(a, b) {
@@ -85,6 +86,7 @@ const getById = async (req, res) => {
 
     try {
         const list = await List.findById(listId)
+        .populate('authors places subscribers')
         if (!list) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
@@ -129,7 +131,8 @@ const update = async (req, res) => {
             placeIds,
             subscriberIds,
             title
-        }, _.isUndefined), { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
+        }, _.isUndefined), { new: true })
+        .populate('authors places subscribers')
         if (!list) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
@@ -200,6 +203,10 @@ const remove = async (req, res) => {
 const search = async (req, res) => {
     console.log("ListService.search")
 
+    return res.status(9000).send({
+        message: "This is a work in progress, please try again later."
+    })
+
     const q = url.parse(req.url, true).query
     var { query } = q
     
@@ -265,6 +272,7 @@ const removeImage = async (req, res) => {
 
     try {
         var list = await List.findById(listId)
+        .populate('authors places subscribers')
         if (!list) {
             return res.status(404).send({
                 message: `List not found with id" ${listId}`
@@ -279,7 +287,8 @@ const removeImage = async (req, res) => {
         const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey }
         await s3.deleteObject(params).promise()
 
-        const updatedList = await List.findByIdAndUpdate(listId, { imagePath: null }, { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
+        const updatedList = await List.findByIdAndUpdate(listId, { imagePath: null }, { new: true })
+        .populate('authors places subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
@@ -319,6 +328,7 @@ const addAuthor = async (req, res) => {
 
     try {
         const list = await List.findById(listId)
+        .populate('authors places subscribers')
         if (!list) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
@@ -351,7 +361,8 @@ const addAuthor = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             authorIds
-        }, { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
+        }, { new: true })
+        .populate('authors places subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
@@ -390,6 +401,7 @@ const removeAuthor = async (req, res) => {
 
     try {
         const list = await List.findById(listId)
+        .populate('authors places subscribers')
         if (!list) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
@@ -420,7 +432,8 @@ const removeAuthor = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             authorIds
-        }, { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
+        }, { new: true })
+        .populate('authors places subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
@@ -445,7 +458,8 @@ const getComments = async (req, res) => {
     const listId = req.params.id
 
     try {
-        const comments = await Comment.find({ listId }).populate('user')
+        const comments = await Comment.find({ listId })
+        .populate('list place user')
         res.send(comments)
 
     } catch (err) {
@@ -570,6 +584,7 @@ const removePlace = async (req, res) => {
 
     try {
         const list = await List.findById(listId)
+        .populate('authors places subscribers')
         if (!list) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
@@ -586,7 +601,8 @@ const removePlace = async (req, res) => {
 
         const updatedList = await List.findByIdAndUpdate(listId, {
             placeIds
-        }, { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
+        }, { new: true })
+        .populate('authors places subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
@@ -632,6 +648,7 @@ const addSubscriber = async (req, res) => {
 
     try {
         const list = await List.findById(listId)
+        .populate('authors places subscribers')
         if (!list) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
@@ -660,7 +677,8 @@ const addSubscriber = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             subscriberIds
-        }, { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
+        }, { new: true })
+        .populate('authors places subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
@@ -699,6 +717,7 @@ const removeSubscriber = async (req, res) => {
 
     try {
         const list = await List.findById(listId)
+        .populate('authors places subscribers')
         if (!list) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
@@ -729,7 +748,8 @@ const removeSubscriber = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             subscriberIds
-        }, { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
+        }, { new: true })
+        .populate('authors places subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`

@@ -45,6 +45,7 @@ module.exports = (app) => {
             }
 
             const updatedList = await List.findByIdAndUpdate(listId, { imagePath }, { new: true })
+            .populate('authors places subscribers')
             if (!updatedList) {
                 return res.status(404).send({
                     message: `List not found with id ${listId}`

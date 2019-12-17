@@ -45,6 +45,7 @@ module.exports = (app) => {
             }
 
             const updatedPlace = await Place.findByIdAndUpdate(placeId, { imagePath }, { new: true })
+            .select('-googlePlacesRating -googlePlacesReviewCount -yelpRating -yelpReviewCount')
             if (!updatedPlace) {
                 return res.status(404).send({
                     message: `Place not found with id ${placeId}`

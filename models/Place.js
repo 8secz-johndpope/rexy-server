@@ -75,14 +75,6 @@ const PlaceSchema = mongoose.Schema({
     timestamps: true
 })
 
-// PlaceSchema.pre('find', function() {
-//     this.select('-googlePlacesRating -googlePlacesReviewCount -yelpRating -yelpReviewCount')
-// })
-
-// PlaceSchema.pre('findOne', function() {
-//     this.select('-googlePlacesRating -googlePlacesReviewCount -yelpRating -yelpReviewCount')
-// })
-
 PlaceSchema.set('toObject', { virtuals: true })
 PlaceSchema.set('toJSON', { virtuals: true })
 

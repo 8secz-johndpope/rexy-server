@@ -44,7 +44,9 @@ module.exports = (app) => {
                 await s3.deleteObject(params).promise()
             }
 
-            const updatedUser = await User.findByIdAndUpdate(userId, { imagePath }, { new: true }).select('-xid -notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+            const updatedUser = await User.findByIdAndUpdate(userId, { imagePath }, { new: true })
+            .select('-xid -notificationSettings')
+            .populate('bookmarkedPlaces lists subscribedLists visitedPlaces')
             if (!updatedUser) {
                 return res.status(404).send({
                     message: `User not found with id ${userId}`
