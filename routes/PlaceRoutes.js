@@ -26,7 +26,7 @@ module.exports = (app) => {
             const place = await Place.findById(placeId)
             if (!place) {
                 return res.status(404).send({
-                    message: "Place not found with id " + placeId
+                    message: `Place not found with id ${placeId}`
                 })
             }
 
@@ -44,27 +44,25 @@ module.exports = (app) => {
                 await s3.deleteObject(params).promise()
             }
 
-            console.log("imagePath", imagePath)
-
             const updatedPlace = await Place.findByIdAndUpdate(placeId, { imagePath }, { new: true })
             if (!updatedPlace) {
                 return res.status(404).send({
-                    message: "Place not found with id " + placeId
+                    message: `Place not found with id ${placeId}`
                 })
             }
             res.send(updatedPlace)
             
         } catch (err) {
-            console.log("PlaceService.uploadImage " + placeId + err)
+            console.log("PlaceService.uploadImage err", placeId, imagePath, err)
 
             if (err.kind === 'ObjectId') {
                 return res.status(404).send({
-                    message: "Place not found with id " + placeId
+                    message: `Place not found with id ${placeId}`
                 })
             }
     
             return res.status(500).send({
-                message: "An error occurred while uploading an image to Place with id " + placeId
+                message: `An error occurred while uploading an image to Place with id ${placeId}`
             })
         }
     })

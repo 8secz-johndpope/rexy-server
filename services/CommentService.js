@@ -35,7 +35,7 @@ const create = async (req, res) => {
         res.send(savedComment)
 
     } catch(err) {
-        console.log("CommentService.create " + err)
+        console.log("CommentService.create err", listId, placeId, text, userId, err)
 
         res.status(500).send({
             message: err.message || "An error occurred while creating the Comment."
@@ -51,11 +51,12 @@ const get = async (req, res) => {
     const q = url.parse(req.url, true).query
 
     try {
-        const comments = await Comment.find({ ...q }).populate('list').populate('place').populate('user')
+        const comments = await Comment.find({ ...q })
+        .populate('list place user')
         res.send(comments)
 
     } catch(err) {
-        console.log("CommentService.get " + err)
+        console.log("CommentService.get err", q, err)
 
         res.status(500).send({
             message: err.message || "An error occurred while retrieving Comments."
@@ -72,24 +73,25 @@ const getById = async (req, res) => {
 
     try {
         const comment = await Comment.findById(commentId)
+        .populate('list place user')
         if (!comment) {
             return res.status(404).send({
-                message: "Comment not found with id " + commentId
+                message: `Comment not found with id ${commentId}`
             })
         }
         res.send(comment)
 
     } catch(err) {
-        console.log("CommentService.getById " + commentId + err)
+        console.log("CommentService.getById err", commentId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "Comment not found with id " + commentId
+                message: `Comment not found with id ${commentId}`
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while retrieving Comment with id " + commentId
+            message: `An error occurred while retrieving Comment with id ${commentId}`
         })
     }
 }
@@ -108,25 +110,26 @@ const update = async (req, res) => {
             placeId,
             text,
             userId
-        }, _.isUndefined), { new: true }).populate('list').populate('place').populate('user')
+        }, _.isUndefined), { new: true })
+        .populate('list place user')
         if (!comment) {
             return res.status(404).send({
-                message: "Comment not found with id " + commentId
+                message: `Comment not found with id ${commentId}`
             })
         }
         res.send(comment)
 
     } catch(err) {
-        console.log("CommentService.update " + commentId + err)
+        console.log("CommentService.update err", commentId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "Comment not found with id " + commentId
+                message: `Comment not found with id ${commentId}`
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while updating Comment with id " + commentId
+            message: `An error occurred while updating Comment with id ${commentId}`
         })
     }
 }
@@ -142,21 +145,21 @@ const remove = async (req, res) => {
         const comment = await Comment.findByIdAndDelete(commentId)
         if (!comment) {
             return res.status(404).send({
-                message: "Comment not found with id " + commentId
+                message: `Comment not found with id ${commentId}`
             })
         }
         res.send(commentId)
         
     } catch(err) {
-        console.log("CommentService.remove " + commentId + err)
+        console.log("CommentService.remove err", commentId, err)
         
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
-                message: "Comment not found with id " + commentId
+                message: `Comment not found with id ${commentId}`
             })
         }
         return res.status(500).send({
-            message: "An error occurred while deleting Comment with id " + commentId
+            message: `An error occurred while deleting Comment with id ${commentId}`
         })
     }
 }

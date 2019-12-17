@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+    const mongoose = require('mongoose')
 const mongoosastic = require('mongoosastic')
 
 const AddressSchema = mongoose.Schema({
@@ -75,13 +75,13 @@ const PlaceSchema = mongoose.Schema({
     timestamps: true
 })
 
-PlaceSchema.pre('find', function() {
-    this.select('-googlePlacesRating').select('-googlePlacesReviewCount').select('-yelpRating').select('-yelpReviewCount')
-})
+// PlaceSchema.pre('find', function() {
+//     this.select('-googlePlacesRating -googlePlacesReviewCount -yelpRating -yelpReviewCount')
+// })
 
-PlaceSchema.pre('findOne', function() {
-    this.select('-googlePlacesRating').select('-googlePlacesReviewCount').select('-yelpRating').select('-yelpReviewCount')
-})
+// PlaceSchema.pre('findOne', function() {
+//     this.select('-googlePlacesRating -googlePlacesReviewCount -yelpRating -yelpReviewCount')
+// })
 
 PlaceSchema.set('toObject', { virtuals: true })
 PlaceSchema.set('toJSON', { virtuals: true })

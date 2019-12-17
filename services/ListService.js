@@ -30,7 +30,7 @@ const create = async (req, res) => {
         res.send(savedList)
         
     } catch (err) {
-        console.log("ListService.create " + err)
+        console.log("ListService.create err", title, err)
 
         res.status(500).send({
             message: err.message || "An error occurred while creating the List."
@@ -68,7 +68,7 @@ const get = async (req, res) => {
         res.send(lists)
         
     } catch (err) {
-        console.log("ListService.get " + err)
+        console.log("ListService.get err", q, err)
 
         res.status(500).send({
             message: err.message || "An error occurred while retrieving Lists."
@@ -87,22 +87,22 @@ const getById = async (req, res) => {
         const list = await List.findById(listId)
         if (!list) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
         res.send(list)
 
     } catch (err) {
-        console.log("ListService.getById " + listId + err)
+        console.log("ListService.getById err", listId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while retrieving List with id " + listId
+            message: `An error occurred while retrieving List with id ${listId}`
         })
     }
 }
@@ -129,25 +129,25 @@ const update = async (req, res) => {
             placeIds,
             subscriberIds,
             title
-        }, _.isUndefined), { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
+        }, _.isUndefined), { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
         if (!list) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
         res.send(list)
 
     } catch (err) {
-        console.log("ListService.update " + listId + err)
+        console.log("ListService.update err", listId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while updating List with id " + listId
+            message: `An error occurred while updating List with id ${listId}`
         })
     }
 }
@@ -163,34 +163,34 @@ const remove = async (req, res) => {
         const list = await List.findByIdAndDelete(listId)
         if (!list) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
 
         Comment.deleteMany({ listId }, function (err) {
             if (err) {
-                console.log("Comment.deleteMany err " + err)
+                console.log("ListService.remove Comment.deleteMany err", listId, err)
             }
         })
 
         User.updateMany({ $pull: { listIds: mongoose.Types.ObjectId(listId), subscribedListIds: mongoose.Types.ObjectId(listId) } }, function (err) {
             if (err) {
-                console.log("User.update err " + err)
+                console.log("ListService.remove User.update err", listId, err)
             }
         })
 
         res.send(listId)
         
     } catch (err) {
-        console.log("ListService.remove " + listId + err)
+        console.log("ListService.remove err", listId, err)
         
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
         return res.status(500).send({
-            message: "An error occurred while deleting List with id " + listId
+            message: `An error occurred while deleting List with id ${listId}`
         })
     }
 }
@@ -205,7 +205,7 @@ const search = async (req, res) => {
     
     if (!query) {
         return res.status(500).send({
-            message: "An error occurred while searching for Places "
+            message: "An error occurred while searching for Lists"
         })
     }
 
@@ -213,10 +213,14 @@ const search = async (req, res) => {
         query += "*"
     }
 
+    console.log("query", query)
+
     List.search({ query_string: { query }}, { hydrate: true }, function (err, results) {
         if (err) {
+            console.log("ListService.search err", q, err)
+
             return res.status(500).send({
-                message: err.message || "An error occurred while searching for Lists."
+                message: err.message || "An error occurred while searching for Lists"
             })
         }
         res.send(results.hits.hits)
@@ -263,7 +267,7 @@ const removeImage = async (req, res) => {
         var list = await List.findById(listId)
         if (!list) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id" ${listId}`
             })
         }
 
@@ -275,19 +279,19 @@ const removeImage = async (req, res) => {
         const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey }
         await s3.deleteObject(params).promise()
 
-        const updatedList = await List.findByIdAndUpdate(listId, { imagePath: null }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
+        const updatedList = await List.findByIdAndUpdate(listId, { imagePath: null }, { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
         res.send(updatedList)
 
     } catch (err) {
-        console.log("ListService.removeImage " + listId + err)
+        console.log("ListService.removeImage err", listId, err)
         
         return res.status(500).send({
-            message: err.message || "An error occurred while removing an image from List with id " + listId
+            message: err.message || "An error occurred while removing an image from List with id", listId
         })
     }
 }
@@ -317,14 +321,14 @@ const addAuthor = async (req, res) => {
         const list = await List.findById(listId)
         if (!list) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
 
         const user = await User.findById(userId)
         if (!user) {
             return res.status(404).send({
-                message: "User not found with id " + userId
+                message: `User not found with id ${userId}`
             })
         }
 
@@ -337,10 +341,8 @@ const addAuthor = async (req, res) => {
 
         var listIds = user.listIds
         if (!listIds) {
-            console.log("create listIds " + listIds)
             listIds = [listId]
         } else {
-            console.log("add to listIds " + listIds)
             listIds.addToSet(listId)
         }
 
@@ -349,19 +351,19 @@ const addAuthor = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             authorIds
-        }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
         res.send(updatedList)
 
     } catch (err) {
-        console.log("UserService.addAuthor " + listId + req.body + err)
+        console.log("ListService.addAuthor err", listId, userId, err)
         
         return res.status(500).send({
-            message: "An error occurred while adding author to List with id " + listId
+            message: `An error occurred while adding author to List with id ${listId}`
         })
     }
 }
@@ -390,14 +392,14 @@ const removeAuthor = async (req, res) => {
         const list = await List.findById(listId)
         if (!list) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
 
         const user = await User.findById(userId)
         if (!user) {
             return res.status(404).send({
-                message: "User not found with id " + userId
+                message: `User not found with id ${userId}`
             })
         }
 
@@ -418,19 +420,19 @@ const removeAuthor = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             authorIds
-        }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
         res.send(updatedList)
 
     } catch (err) {
-        console.log("UserService.removeAuthor " + listId + userId + err)
+        console.log("ListService.removeAuthor err", listId, userId, err)
 
         return res.status(500).send({
-            message: "An error occurred while removing an author from List with id " + listId
+            message: `An error occurred while removing an author from List with id ${listId}`
         })
     }
 }
@@ -447,7 +449,7 @@ const getComments = async (req, res) => {
         res.send(comments)
 
     } catch (err) {
-        console.log("ListService.getComments " + listId + err)
+        console.log("ListService.getComments err", listId, err)
 
         res.status(500).send({
             message: err.message || "An error occurred while retrieving List's Comments."
@@ -480,7 +482,7 @@ const addPlace = async (req, res) => {
         const list = await List.findById(listId)
         if (!list) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
 
@@ -493,7 +495,9 @@ const addPlace = async (req, res) => {
 
         const updatedList = await List.findByIdAndUpdate(listId, {
             placeIds
-        }, { new: true }).populate('authors').populate('places').populate('subscribers').populate({
+        }, { new: true })
+        .populate('authors places')
+        .populate({
             path: 'subscribers',
             populate: {
                 path: 'notificationSettings',
@@ -502,7 +506,7 @@ const addPlace = async (req, res) => {
         })
         if (!updatedList) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
 
@@ -522,24 +526,24 @@ const addPlace = async (req, res) => {
                 topic: "com.gdwsk.Rexy"
             })
 
-            APNSProvider.provider.send(notification, deviceTokens).then(result => {
-                console.log("result " + JSON.stringify(result))
-            })
+            APNSProvider.provider.send(notification, deviceTokens)/*.then(result => {
+                console.log("result", JSON.stringify(result))
+            })*/
         }
 
         res.send(updatedList)
 
     } catch (err) {
-        console.log("ListService.addPlace " + listId + err)
+        console.log("ListService.addPlace err", listId, placeId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while updating List with id " + listId
+            message: `An error occurred while updating List with id ${listId}`
         })
     }
 }
@@ -568,7 +572,7 @@ const removePlace = async (req, res) => {
         const list = await List.findById(listId)
         if (!list) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
 
@@ -582,25 +586,25 @@ const removePlace = async (req, res) => {
 
         const updatedList = await List.findByIdAndUpdate(listId, {
             placeIds
-        }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
         res.send(updatedList)
 
     } catch (err) {
-        console.log("ListService.removePlace " + listId + placeId + err)
+        console.log("ListService.removePlace err", listId, placeId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while updating List with id " + listId
+            message: `An error occurred while updating List with id ${listId}`
         })
     }
 }
@@ -630,14 +634,14 @@ const addSubscriber = async (req, res) => {
         const list = await List.findById(listId)
         if (!list) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
 
         const user = await User.findById(userId)
         if (!user) {
             return res.status(404).send({
-                message: "User not found with id " + userId
+                message: `User not found with id ${userId}`
             })
         }
 
@@ -656,19 +660,19 @@ const addSubscriber = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             subscriberIds
-        }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
         res.send(updatedList)
 
     } catch (err) {
-        console.log("UserService.addSubscriber " + listId + req.body + err)
+        console.log("ListService.addSubscriber err", listId, userId, err)
         
         return res.status(500).send({
-            message: "An error occurred while subscribing to List with id " + listId
+            message: `An error occurred while subscribing to List with id ${listId}`
         })
     }
 }
@@ -697,14 +701,14 @@ const removeSubscriber = async (req, res) => {
         const list = await List.findById(listId)
         if (!list) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
 
         const user = await User.findById(userId)
         if (!user) {
             return res.status(404).send({
-                message: "User not found with id " + userId
+                message: `User not found with id ${userId}`
             })
         }
 
@@ -725,19 +729,19 @@ const removeSubscriber = async (req, res) => {
         })
         const updatedList = await List.findByIdAndUpdate(listId, {
             subscriberIds
-        }, { new: true }).populate('authors', '-notificationSettings').populate('places').populate('subscribers')
+        }, { new: true }).populate('authors').populate('-notificationSettings').populate('places').populate('subscribers')
         if (!updatedList) {
             return res.status(404).send({
-                message: "List not found with id " + listId
+                message: `List not found with id ${listId}`
             })
         }
         res.send(updatedList)
 
     } catch (err) {
-        console.log("UserService.removeSubscriber " + listId + userId + err)
+        console.log("ListService.removeSubscriber", listId, userId, err)
 
         return res.status(500).send({
-            message: "An error occurred while unsubscribing to List with id " + listId
+            message: `An error occurred while unsubscribing to List with id ${listId}`
         })
     }
 }

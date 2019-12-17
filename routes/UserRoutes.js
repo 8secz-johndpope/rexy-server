@@ -26,7 +26,7 @@ module.exports = (app) => {
             var user = await User.findById(userId)
             if (!user) {
                 return res.status(404).send({
-                    message: "User not found with id " + userId
+                    message: `User not found with id ${userId}`
                 })
             }
 
@@ -44,25 +44,25 @@ module.exports = (app) => {
                 await s3.deleteObject(params).promise()
             }
 
-            const updatedUser = await User.findByIdAndUpdate(userId, { imagePath }, { new: true }).select('-xid').select('-notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
+            const updatedUser = await User.findByIdAndUpdate(userId, { imagePath }, { new: true }).select('-xid -notificationSettings').populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')
             if (!updatedUser) {
                 return res.status(404).send({
-                    message: "User not found with id " + userId
+                    message: `User not found with id ${userId}`
                 })
             }
             res.send(updatedUser)
             
         } catch (err) {
-            console.log("UserService.uploadImage " + userId + err)
+            console.log("UserService.uploadImage err", userId, imagePath, err)
 
             if (err.kind === 'ObjectId') {
                 return res.status(404).send({
-                    message: "User not found with id " + userId
+                    message: `User not found with id ${userId}`
                 })
             }
     
             return res.status(500).send({
-                message: "An error occurred while uploading an image to User with id " + userId
+                message: `An error occurred while uploading an image to User with id ${userId}`
             })
         }
     })

@@ -51,9 +51,9 @@ UserSchema.virtual('visitedPlaces', {
     foreignField: '_id'
 })
 
-UserSchema.pre('findOne', function() {
-    this.populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces').populate('notificationSettings')
-})
+// UserSchema.pre('findOne', function() {
+//     this/*.populate('bookmarkedPlaces').populate('lists').populate('subscribedLists').populate('visitedPlaces')*/.populate('notificationSettings')
+// })
 
 UserSchema.set('toObject', { virtuals: true })
 UserSchema.set('toJSON', { virtuals: true })

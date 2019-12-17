@@ -23,7 +23,7 @@ const create = async (req, res) => {
         res.send(savedSettings)
 
     } catch(err) {
-        console.log("NotificationService.create " + err)
+        console.log("NotificationService.create err", deviceToken, err)
 
         res.status(500).send({
             message: err.message || "An error occurred while creating Notification Settings."
@@ -42,22 +42,22 @@ const getById = async (req, res) => {
         const notificationSettings = await NotificationSettings.findById(notificationSettingsId).select('-deviceToken')
         if (!notificationSettings) {
             return res.status(404).send({
-                message: "Notification Settings not found with id " + notificationSettingsId
+                message: `Notification Settings not found with id ${notificationSettingsId}`
             })
         }
         res.send(notificationSettings)
 
     } catch(err) {
-        console.log("NotificationService.getById " + notificationSettingsId + err)
+        console.log("NotificationService.getById err", notificationSettingsId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "Notification Settings not found with id " + notificationSettingsId
+                message: `Notification Settings not found with id ${notificationSettingsId}`
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while retrieving Notification Settings with id " + notificationSettingsId
+            message: `An error occurred while retrieving Notification Settings with id ${notificationSettingsId}`
         })
     }
 }
@@ -77,22 +77,22 @@ const update = async (req, res) => {
         }, _.isUndefined), { new: true }).select('-deviceToken')
         if (!notificationSettings) {
             return res.status(404).send({
-                message: "Notification Settings not found with id " + notificationSettingsId
+                message: `Notification Settings not found with id ${notificationSettingsId}`
             })
         }
         res.send(notificationSettings)
 
     } catch(err) {
-        console.log("NotificationService.update " + notificationSettingsId + err)
+        console.log("NotificationService.update err", notificationSettingsId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
-                message: "Notification Settings not found with id " + notificationSettingsId
+                message: `Notification Settings not found with id ${notificationSettingsId}`
             })
         }
 
         return res.status(500).send({
-            message: "An error occurred while updating Notification Settings with id " + notificationSettingsId
+            message: `An error occurred while updating Notification Settings with id ${notificationSettingsId}`
         })
     }
 }
@@ -108,21 +108,21 @@ const remove = async (req, res) => {
         const notificationSettings = await NotificationSettings.findByIdAndDelete(notificationSettingsId)
         if (!notificationSettings) {
             return res.status(404).send({
-                message: "Notification Settings not found with id " + notificationSettingsId
+                message: `Notification Settings not found with id ${notificationSettingsId}`
             })
         }
         res.send(notificationSettingsId)
         
     } catch(err) {
-        console.log("NotificationService.remove " + notificationSettingsId + err)
+        console.log("NotificationService.remove err", notificationSettingsId + err)
         
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
-                message: "Notification Settings not found with id " + notificationSettingsId
+                message: `Notification Settings not found with id ${notificationSettingsId}`
             })
         }
         return res.status(500).send({
-            message: "An error occurred while deleting Notification Settings with id " + notificationSettingsId
+            message: `An error occurred while deleting Notification Settings with id ${notificationSettingsId}`
         })
     }
 }

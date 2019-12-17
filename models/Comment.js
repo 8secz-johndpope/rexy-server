@@ -31,10 +31,6 @@ CommentSchema.virtual('user', {
     justOne: true
 })
 
-CommentSchema.pre('findOne', function() {
-    this.populate('list').populate('place').populate('user')
-})
-
 CommentSchema.set('toObject', { virtuals: true })
 CommentSchema.set('toJSON', { virtuals: true })
 

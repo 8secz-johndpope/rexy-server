@@ -26,7 +26,7 @@ module.exports = (app) => {
             const list = await List.findById(listId)
             if (!list) {
                 return res.status(404).send({
-                    message: "List not found with id " + listId
+                    message: `List not found with id ${listId}`
                 })
             }
 
@@ -47,22 +47,22 @@ module.exports = (app) => {
             const updatedList = await List.findByIdAndUpdate(listId, { imagePath }, { new: true })
             if (!updatedList) {
                 return res.status(404).send({
-                    message: "List not found with id " + listId
+                    message: `List not found with id ${listId}`
                 })
             }
             res.send(updatedList)
             
         } catch (err) {
-            console.log("ListService.uploadImage " + listId + err)
+            console.log("ListService.uploadImage err", listId, imagePath, err)
 
             if (err.kind === 'ObjectId') {
                 return res.status(404).send({
-                    message: "List not found with id " + listId
+                    message: `List not found with id ${listId}`
                 })
             }
     
             return res.status(500).send({
-                message: "An error occurred while uploading an image to List with id " + listId
+                message: `An error occurred while uploading an image to List with id ${listId}`
             })
         }
     })
