@@ -540,9 +540,9 @@ const addPlace = async (req, res) => {
                 topic: "com.gdwsk.Rexy"
             })
 
-            APNSProvider.provider.send(notification, deviceTokens)/*.then(result => {
+            APNSProvider.provider.send(notification, deviceTokens).then(result => {
                 console.log("result", JSON.stringify(result))
-            })*/
+            })
         }
 
         res.send(updatedList)

@@ -1,6 +1,6 @@
 const NotificationSettings = require('../models/NotificationSettings.js')
 
-const url = require('url');
+const app = require('../index.js')
 const _ = require('lodash')
 
 
@@ -138,7 +138,7 @@ const options = {
         keyId: process.env.APNS_KEY,
         teamId: process.env.APNS_TEAM
     },
-    production: true
+    production: process.env.NODE_ENV === 'production'
 }
 const provider = new apn.Provider(options)
 
