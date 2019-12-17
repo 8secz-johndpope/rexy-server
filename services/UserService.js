@@ -957,8 +957,39 @@ const register = async (req, res) => {
             return res.send(user)
         }
 
-        const notificationSettings = new NotificationSettings({ deviceToken, userId })
+        if (user.notificationSettings.deviceToken) {
+            console.log("update existing notification settings")
+            const updatedNotificationSettings = await NotificationSettings.findByIdAndUpdate(user.notificationSettingsId, { deviceToken })
+            if (!updatedNotificationSettings) {
+                return res.status(404).send({
+                    message: `User not found with id ${userId}`
+                })
+            }
+            const updatedUser = await User.findById(userId)
+            .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+            .populate({
+                path: 'lists',
+                populate: {
+                    path: 'places',
+                    model: 'Place'
+                }
+            })
+            .populate({
+                path: 'subscribedLists',
+                populate: {
+                    path: 'places',
+                    model: 'Place'
+                }
+            })
+            if (!user) {
+                return res.status(404).send({
+                    message: `User not found with id ${userId}`
+                })
+            }
+            return res.send(updatedUser)
+        }
 
+        const notificationSettings = new NotificationSettings({ deviceToken, userId })
         const savedSettings = await notificationSettings.save()
         const notificationSettingsId = savedSettings._id
         
