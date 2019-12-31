@@ -1,6 +1,6 @@
-const NotificationSettings = require('../models/NotificationSettings.js')
+const Notification = require('../models/Notification.js')
 
-const app = require('../index.js')
+const url = require('url');
 const _ = require('lodash')
 
 
@@ -8,130 +8,53 @@ const _ = require('lodash')
 const create = async (req, res) => {
     console.log("NotificationService.create")
 
-    const { deviceToken } = req.body
+    const { actorId, attributedDescription, description, isArchived, isRead, object, targetId, type } = req.body
 
-    if (!deviceToken) {
-        return res.status(400).send({
-            message: "Notification Settings must have a device token."
-        })
-    }
-
-    const notificationSettings = new NotificationSettings({ deviceToken })
+    const notification = new Notification({
+        actorId,
+        attributedDescription,
+        description,
+        isArchived,
+        isRead,
+        object,
+        targetId,
+        type
+    })
 
     try {
-        const savedSettings = await notificationSettings.save()
-        res.send(savedSettings)
+        const savedNotification = await notification.save()
+        res.send(savedNotification)
 
     } catch(err) {
-        console.log("NotificationService.create err", deviceToken, err)
+        console.log("NotificationService.create err", err)
 
         res.status(500).send({
-            message: err.message || "An error occurred while creating Notification Settings."
+            message: err.message || "An error occurred while creating a Notification."
         })
     }
 }
 
+// get
+const get = async (req, res) => {
+    console.log("NotificationService.get")
 
-// get by id
-const getById = async (req, res) => {
-    console.log("NotificationService.getById")
-
-    const notificationSettingsId = req.params.id
+    const q = url.parse(req.url, true).query
+    const { targetId } = q
 
     try {
-        const notificationSettings = await NotificationSettings.findById(notificationSettingsId).select('-deviceToken')
-        if (!notificationSettings) {
-            return res.status(404).send({
-                message: `Notification Settings not found with id ${notificationSettingsId}`
-            })
-        }
-        res.send(notificationSettings)
+        const notifications = await Notification.find({ targetId })
+        .populate("actor target")
+        console.log("sending", notifications)
+        res.send(notifications || [])
+    
+    } catch (err) {
 
-    } catch(err) {
-        console.log("NotificationService.getById err", notificationSettingsId, err)
-
-        if (err.kind === 'ObjectId') {
-            return res.status(404).send({
-                message: `Notification Settings not found with id ${notificationSettingsId}`
-            })
-        }
-
-        return res.status(500).send({
-            message: `An error occurred while retrieving Notification Settings with id ${notificationSettingsId}`
-        })
     }
 }
 
-
-// update
-const update = async (req, res) => {
-    console.log("NotificationService.update")
-
-    const notificationSettingsId = req.params.id
-    const { deviceToken, receiveSubscriptionNotifications } = req.body
-
-    try {
-        const notificationSettings = await NotificationSettings.findByIdAndUpdate(notificationSettingsId, _.omitBy({
-            deviceToken,
-            receiveSubscriptionNotifications
-        }, _.isUndefined), { new: true }).select('-deviceToken')
-        if (!notificationSettings) {
-            return res.status(404).send({
-                message: `Notification Settings not found with id ${notificationSettingsId}`
-            })
-        }
-        res.send(notificationSettings)
-
-    } catch(err) {
-        console.log("NotificationService.update err", notificationSettingsId, err)
-
-        if (err.kind === 'ObjectId') {
-            return res.status(404).send({
-                message: `Notification Settings not found with id ${notificationSettingsId}`
-            })
-        }
-
-        return res.status(500).send({
-            message: `An error occurred while updating Notification Settings with id ${notificationSettingsId}`
-        })
-    }
-}
-
-
-// delete
-const remove = async (req, res) => {
-    console.log("NotificationService.remove")
-
-    const notificationSettingsId = req.params.id
-
-    try {
-        const notificationSettings = await NotificationSettings.findByIdAndDelete(notificationSettingsId)
-        if (!notificationSettings) {
-            return res.status(404).send({
-                message: `Notification Settings not found with id ${notificationSettingsId}`
-            })
-        }
-        res.send(notificationSettingsId)
-        
-    } catch(err) {
-        console.log("NotificationService.remove err", notificationSettingsId + err)
-        
-        if (err.kind === 'ObjectId' || err.name === 'NotFound') {
-            return res.status(404).send({
-                message: `Notification Settings not found with id ${notificationSettingsId}`
-            })
-        }
-        return res.status(500).send({
-            message: `An error occurred while deleting Notification Settings with id ${notificationSettingsId}`
-        })
-    }
-}
-
-
+// apn
 // https://github.com/node-apn/node-apn
-
 const apn = require('apn')
-
 const options = {
     token: {
         key: './config/gdwsk_apns_certificate.p8',
@@ -143,4 +66,4 @@ const options = {
 const provider = new apn.Provider(options)
 
 
-module.exports = { create, getById, update, remove, apn, provider }
+module.exports = { create, get, apn, provider }

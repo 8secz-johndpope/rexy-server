@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 
-const NotificationSettingsSchema = mongoose.Schema({
+const SettingsSchema = mongoose.Schema({
     deviceToken: { type: String, unique: true, sparse: true },
     receiveSubscriptionNotifications: { type: Boolean, default: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", unique: true, sparse: true }
@@ -9,4 +9,4 @@ const NotificationSettingsSchema = mongoose.Schema({
     timestamps: false
 })
 
-module.exports = mongoose.model('NotificationSettings', NotificationSettingsSchema)
+module.exports = mongoose.model('Settings', SettingsSchema)

@@ -38,6 +38,7 @@ require('./routes/CommentRoutes.js')(app)
 require('./routes/ListRoutes.js')(app)
 require('./routes/NotificationRoutes.js')(app)
 require('./routes/PlaceRoutes.js')(app)
+require('./routes/SettingsRoutes.js')(app)
 require('./routes/UserRoutes.js')(app)
 
 console.log(`Using ${JSON.stringify(process.env.NODE_ENV)} ${app.settings.env} environment`)

@@ -1,6 +1,6 @@
 const Comment = require('../models/Comment.js')
 const List = require('../models/List.js')
-const NotificationSettings = require('../models/NotificationSettings.js')
+const Settings = require('../models/Settings.js')
 const User = require('../models/User.js')
 
 const aws = require('aws-sdk')
@@ -51,7 +51,7 @@ const authenticate = async (req, res) => {
 
     try {
         const user = await User.findOneAndUpdate({ xid }, { emailAddress }, {new: true})
-        .populate('bookmarkedPlaces lists notificationSettings subscribedLists visitedPlaces')
+        .populate('bookmarkedPlaces lists settings subscribedLists visitedPlaces')
         if (!user) {
             return res.status(404).send({
                 message: `User not found with xid ${userId}`
@@ -72,7 +72,7 @@ const authenticate = async (req, res) => {
 const create = async (req, res) => {
     console.log("UserService.create")
 
-    var { bookmarkedPlaceIds, emailAddress, firstName, imagePath, isVerified, lastName, listIds, notificationSettingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid } = req.body
+    var { bookmarkedPlaceIds, emailAddress, firstName, imagePath, isVerified, lastName, listIds, settingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid } = req.body
 
     if (!xid) {
         return res.status(400).send({
@@ -80,7 +80,7 @@ const create = async (req, res) => {
         })
     }
 
-    const user = new User({ bookmarkedPlaceIds, emailAddress, firstName, imagePath, isVerified, lastName, listIds, notificationSettingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid })
+    const user = new User({ bookmarkedPlaceIds, emailAddress, firstName, imagePath, isVerified, lastName, listIds, settingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid })
 
     try {
         const savedUser = await user.save()
@@ -109,7 +109,7 @@ const get = async (req, res) => {
     
     try {
         const users = await User.find(usernameQuery)
-        .select('-xid -notificationSettings')
+        .select('-xid -settings')
         res.send(users)
 
     } catch (err) {
@@ -135,7 +135,7 @@ const getById = async (req, res) => {
             const user = await User.findOne({
                 xid: userId
             })
-            .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+            .populate('bookmarkedPlaces settings visitedPlaces')
             .populate({
                 path: 'lists',
                 populate: {
@@ -159,7 +159,7 @@ const getById = async (req, res) => {
 
         } else {
             const user = await User.findById(userId)
-            .select('-xid -notificationSettings')
+            .select('-xid -settings')
             .populate('bookmarkedPlaces lists subscribedLists visitedPlaces')
             if (!user) {
                 return res.status(404).send({
@@ -190,7 +190,7 @@ const update = async (req, res) => {
     console.log("UserService.update")
 
     const userId = req.params.id
-    const { bookmarkedPlaceIds, emailAddress, firstName, imagePath, isVerified, lastName, listIds, notificationSettingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid } = req.body
+    const { bookmarkedPlaceIds, emailAddress, firstName, imagePath, isVerified, lastName, listIds, settingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid } = req.body
 
     try {
         const user = await User.findByIdAndUpdate(userId, _.omitBy({
@@ -201,7 +201,7 @@ const update = async (req, res) => {
             isVerified,
             lastName,
             listIds,
-            notificationSettingsId,
+            settingsId,
             phoneNumber,
             prefersUsername,
             subscribedListIds,
@@ -209,7 +209,7 @@ const update = async (req, res) => {
             visitedPlaceIds,
             xid
         }, _.isUndefined), { new: true })
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -261,9 +261,9 @@ const remove = async (req, res) => {
             })
         }
 
-        NotificationSettings.deleteMany({ userId }, function (err) {
+        Settings.deleteMany({ userId }, function (err) {
             if (err) {
-                console.log("UserService.remove NotificationSettings.deleteMany err", userId, err)
+                console.log("UserService.remove Settings.deleteMany err", userId, err)
             }
         })
 
@@ -332,7 +332,7 @@ const removeImage = async (req, res) => {
 
     try {
         const user = await User.findById(userId)
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -362,7 +362,7 @@ const removeImage = async (req, res) => {
         await s3.deleteObject(params).promise()
 
         const updatedUser = await User.findByIdAndUpdate(userId, { imagePath: null }, { new: true })
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -402,7 +402,7 @@ const getLists = async (req, res) => {
 
     try {
         const user = await User.findById(userId)
-        .select('-xid -notificationSettings')
+        .select('-xid -settings')
         .populate({
             path: 'lists',
             populate: {
@@ -444,7 +444,7 @@ const getSubscriptions = async (req, res) => {
 
     try {
         const user = await User.findById(userId)
-        .select('-xid -notificationSettings')
+        .select('-xid -settings')
         .populate({
             path: 'subscribedLists',
             populate: {
@@ -500,7 +500,7 @@ const addBookmark = async (req, res) => {
 
     try {
         const user = await User.findById(userId)
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -531,7 +531,7 @@ const addBookmark = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(userId, {
             bookmarkedPlaceIds: placeIds
         }, { new: true })
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -629,7 +629,7 @@ const removeBookmark = async (req, res) => {
 
     try {
         const user = await User.findById(userId)
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -661,7 +661,7 @@ const removeBookmark = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(userId, {
             bookmarkedPlaceIds
         }, { new: true })
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -721,7 +721,7 @@ const addVisited = async (req, res) => {
 
     try {
         const user = await User.findById(userId)
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -752,7 +752,7 @@ const addVisited = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(userId, {
             visitedPlaceIds: placeIds
         }, { new: true })
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -849,7 +849,7 @@ const removeVisited = async (req, res) => {
 
     try {
         const user = await User.findById(userId)
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -881,7 +881,7 @@ const removeVisited = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(userId, {
             visitedPlaceIds: placeIds
         }, { new: true })
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -933,7 +933,7 @@ const register = async (req, res) => {
 
     try {
         const user = await User.findById(userId)
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -953,20 +953,20 @@ const register = async (req, res) => {
                 message: `User not found with id ${userId}`
             })
         }
-        if (user.notificationSettings && user.notificationSettings.deviceToken && user.notificationSettings.deviceToken === deviceToken) {
+        if (user.settings && user.settings.deviceToken && user.settings.deviceToken === deviceToken) {
             return res.send(user)
         }
 
-        if (user.notificationSettings.deviceToken) {
+        if (user.settings.deviceToken) {
             console.log("update existing notification settings")
-            const updatedNotificationSettings = await NotificationSettings.findByIdAndUpdate(user.notificationSettingsId, { deviceToken })
-            if (!updatedNotificationSettings) {
+            const updatedSettings = await Settings.findByIdAndUpdate(user.settingsId, { deviceToken })
+            if (!updatedSettings) {
                 return res.status(404).send({
                     message: `User not found with id ${userId}`
                 })
             }
             const updatedUser = await User.findById(userId)
-            .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+            .populate('bookmarkedPlaces settings visitedPlaces')
             .populate({
                 path: 'lists',
                 populate: {
@@ -989,14 +989,14 @@ const register = async (req, res) => {
             return res.send(updatedUser)
         }
 
-        const notificationSettings = new NotificationSettings({ deviceToken, userId })
-        const savedSettings = await notificationSettings.save()
-        const notificationSettingsId = savedSettings._id
+        const settings = new Settings({ deviceToken, userId })
+        const savedSettings = await settings.save()
+        const settingsId = savedSettings._id
         
         const updatedUser = await User.findByIdAndUpdate(userId, {
-            notificationSettingsId
+            settingsId
         }, { new: true })
-        .populate('bookmarkedPlaces notificationSettings visitedPlaces')
+        .populate('bookmarkedPlaces settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -1016,7 +1016,7 @@ const register = async (req, res) => {
                 message: `User not found with id ${userId}`
             })
         }
-        if (!updatedUser.notificationSettings || !updatedUser.notificationSettings.deviceToken) {
+        if (!updatedUser.settings || !updatedUser.settings.deviceToken) {
             return res.status(500).send({
                 message: `An error occurred while adding APNs device token to User with id ${userId}`
             })

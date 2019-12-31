@@ -8,9 +8,9 @@ const UserSchema = mongoose.Schema({
     isVerified: { type: Boolean, default: false },
     lastName: { type: String },
     listIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
-    notificationSettingsId: { type: mongoose.Schema.Types.ObjectId, ref: "NotificationSettings" },
     phoneNumber: { type: String, unique: true, sparse: true },
     prefersUsername: { type: Boolean, defaults: false },
+    settingsId: { type: mongoose.Schema.Types.ObjectId, ref: "Settings" },
     subscribedListIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
     username: { type: String, unique: true, sparse: true },
     visitedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
@@ -32,9 +32,9 @@ UserSchema.virtual('lists', {
     foreignField: '_id'
 })
 
-UserSchema.virtual('notificationSettings', {
-    ref: 'NotificationSettings',
-    localField: 'notificationSettingsId',
+UserSchema.virtual('settings', {
+    ref: 'Settings',
+    localField: 'settingsId',
     foreignField: '_id',
     justOne: true
 })

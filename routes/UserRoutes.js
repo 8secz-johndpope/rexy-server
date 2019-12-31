@@ -45,7 +45,7 @@ module.exports = (app) => {
             }
 
             const updatedUser = await User.findByIdAndUpdate(userId, { imagePath }, { new: true })
-            .select('-xid -notificationSettings')
+            .select('-xid -settings')
             .populate('bookmarkedPlaces lists subscribedLists visitedPlaces')
             if (!updatedUser) {
                 return res.status(404).send({

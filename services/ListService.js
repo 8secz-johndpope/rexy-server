@@ -514,8 +514,8 @@ const addPlace = async (req, res) => {
         .populate({
             path: 'subscribers',
             populate: {
-                path: 'notificationSettings',
-                model: 'NotificationSettings'
+                path: 'settings',
+                model: 'Settings'
             }
         })
         if (!updatedList) {
@@ -525,7 +525,7 @@ const addPlace = async (req, res) => {
         }
 
         if (updatedList.subscribers) {
-            const deviceTokens = updatedList.subscribers.filter(subscriber => subscriber.notificationSettings && subscriber.notificationSettings.deviceToken && subscriber.notificationSettings.receiveSubscriptionNotifications).map(subscriber => subscriber.notificationSettings.deviceToken)
+            const deviceTokens = updatedList.subscribers.filter(subscriber => subscriber.settings && subscriber.settings.deviceToken && subscriber.settings.receiveSubscriptionNotifications).map(subscriber => subscriber.settings.deviceToken)
             
             const notification = new APNSProvider.apn.Notification({
                 badge: 0,
