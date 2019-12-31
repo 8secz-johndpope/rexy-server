@@ -225,11 +225,11 @@ const update = async (req, res) => {
             }
         })
     if (!user) {
-            return res.status(404).send({
-                message: `User not found with id ${userId}`
-            })
-        }
-        res.send(user)
+        return res.status(404).send({
+            message: `User not found with id ${userId}`
+        })
+    }
+    res.send(user)
 
     } catch (err) {
         console.log("UserService.update err", userId, err)
