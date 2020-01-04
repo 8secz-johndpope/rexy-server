@@ -2,22 +2,23 @@ module.exports = (app) => {
     const Place = require('../models/Place.js')
     const places = require('../services/PlaceService.js')
 
+    const auth = require('../middleware/auth.js').validateToken
     const aws = require('aws-sdk')
 
 
     // crud
-    app.post('/places', places.create)
-    app.get('/places', places.get)
-    app.get('/places/:id', places.getById)
-    app.patch('/places/:id', places.update)
-    app.delete('/places/:id', places.remove)
+    app.post('/places', auth, places.create)
+    app.get('/places', auth, places.get)
+    app.get('/places/:id', auth, places.getById)
+    app.patch('/places/:id', auth, places.update)
+    app.delete('/places/:id', auth, places.remove)
 
     // search
-    app.post('/search/places', places.search)
+    app.post('/search/places', auth, places.search)
 
     // image
-    app.post('/places/:id/image', places.uploadImage, async (req, res) => {
-        console.log("PlaceService.uploadImage")
+    app.post('/places/:id/image', auth, places.uploadImage, async (req, res) => {
+        console.log('PlaceService.uploadImage')
 
         const placeId = req.params.id
         const imagePath = req.file.location
@@ -39,7 +40,7 @@ module.exports = (app) => {
     
                 const s3 = new aws.S3()
 
-                const oldKey = place.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
+                const oldKey = place.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, '')
                 const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey }
                 await s3.deleteObject(params).promise()
             }
@@ -54,7 +55,7 @@ module.exports = (app) => {
             res.send(updatedPlace)
             
         } catch (err) {
-            console.log("PlaceService.uploadImage err", placeId, imagePath, err)
+            console.log('PlaceService.uploadImage err', placeId, imagePath, err)
 
             if (err.kind === 'ObjectId') {
                 return res.status(404).send({
@@ -67,8 +68,8 @@ module.exports = (app) => {
             })
         }
     })
-    app.delete('/places/:id/image', places.removeImage)
+    app.delete('/places/:id/image', auth, places.removeImage)
 
     // migrate
-    app.post('/places/migrate', places.migrate)
+    app.post('/places/migrate', auth, places.migrate)
 }

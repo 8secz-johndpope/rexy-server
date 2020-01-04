@@ -2,22 +2,23 @@ module.exports = (app) => {
     const List = require('../models/List.js')
     const lists = require('../services/ListService.js')
 
+    const auth = require('../middleware/auth.js').validateToken
     const aws = require('aws-sdk')
 
 
     // crud
-    app.post('/lists', lists.create)
-    app.get('/lists', lists.get)
-    app.get('/lists/:id', lists.getById)
-    app.patch('/lists/:id', lists.update)
-    app.delete('/lists/:id', lists.remove)
+    app.post('/lists', auth, lists.create)
+    app.get('/lists', auth, lists.get)
+    app.get('/lists/:id', auth, lists.getById)
+    app.patch('/lists/:id', auth, lists.update)
+    app.delete('/lists/:id', auth, lists.remove)
 
     // search
-    app.get('/search/lists', lists.search)
+    app.get('/search/lists', auth, lists.search)
 
     // image
-    app.post('/lists/:id/image', lists.uploadImage, async (req, res) => {
-        console.log("ListService.uploadImage")
+    app.post('/lists/:id/image', auth, lists.uploadImage, async (req, res) => {
+        console.log('ListService.uploadImage')
 
         const listId = req.params.id
         const imagePath = req.file.location
@@ -39,7 +40,7 @@ module.exports = (app) => {
     
                 const s3 = new aws.S3()
 
-                const oldKey = list.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
+                const oldKey = list.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, '')
                 const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey }
                 await s3.deleteObject(params).promise()
             }
@@ -54,7 +55,7 @@ module.exports = (app) => {
             res.send(updatedList)
             
         } catch (err) {
-            console.log("ListService.uploadImage err", listId, imagePath, err)
+            console.log('ListService.uploadImage err', listId, imagePath, err)
 
             if (err.kind === 'ObjectId') {
                 return res.status(404).send({
@@ -67,20 +68,20 @@ module.exports = (app) => {
             })
         }
     })
-    app.delete('/lists/:id/image', lists.removeImage)
+    app.delete('/lists/:id/image', auth, lists.removeImage)
 
     // authors
-    app.post('/lists/:id/authors', lists.addAuthor)
-    app.delete('/lists/:id/authors/:userId', lists.removeAuthor)
+    app.post('/lists/:id/authors', auth, lists.addAuthor)
+    app.delete('/lists/:id/authors/:userId', auth, lists.removeAuthor)
 
     // comments
-    app.get('/lists/:id/comments', lists.getComments)
+    app.get('/lists/:id/comments', auth, lists.getComments)
 
     // places
-    app.post('/lists/:id/places', lists.addPlace)
-    app.delete('/lists/:id/places/:placeId', lists.removePlace)
+    app.post('/lists/:id/places', auth, lists.addPlace)
+    app.delete('/lists/:id/places/:placeId', auth, lists.removePlace)
 
     // subscriptions
-    app.post('/lists/:id/subscribers', lists.addSubscriber)
-    app.delete('/lists/:id/subscribers/:userId', lists.removeSubscriber)
+    app.post('/lists/:id/subscribers', auth, lists.addSubscriber)
+    app.delete('/lists/:id/subscribers/:userId', auth, lists.removeSubscriber)
 }

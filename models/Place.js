@@ -27,7 +27,7 @@ const HoursOfServiceExceptionsSchema = mongoose.Schema({
     date: { type: Date },
     hours: { type: [DailyOpenPeriodSchema] },
     isClosed: { type: Boolean, default: false },
-    recurring: { type: String, enum: ["never", "monthly", "yearly"], default: "never" }
+    recurring: { type: String, enum: ['never', 'monthly', 'yearly'], default: 'never' }
 }, {
     _id: false,
     id: false
@@ -80,12 +80,12 @@ PlaceSchema.set('toJSON', { virtuals: true })
 
 PlaceSchema.plugin(mongoosastic, { hosts: [process.env.BONSAI_URL] })
 mongoose.model('Place', PlaceSchema).createMapping(/*{
-    "settings" : {
-        "analysis" : {
-            "analyzer" : {
-                "standard_asciifolding" : {
-                    "tokenizer" : "standard",
-                    "filter" : ["asciifolding"]
+    'settings' : {
+        'analysis' : {
+            'analyzer' : {
+                'standard_asciifolding' : {
+                    'tokenizer' : 'standard',
+                    'filter' : ['asciifolding']
                 }
             }
         }
@@ -102,4 +102,4 @@ mongoose.model('Place', PlaceSchema).createMapping(/*{
 mongoose.model('Place', PlaceSchema).synchronize()
 
 module.exports = mongoose.model('Place', PlaceSchema)
-module.exports.supportedTypes = ["bakery", "bar", "cafe", "chocolatier", "food", "grocery store", "juice bar", "market", "meal_takeaway", "restaurant", "street vendor", "amusement park", "building", "castle", "church", "fountain", "garden", "house", "monument", "museum", "park", "point of interest", "square", "stadium"]
+module.exports.supportedTypes = ['bakery', 'bar', 'cafe', 'chocolatier', 'food', 'grocery store', 'juice bar', 'market', 'meal_takeaway', 'restaurant', 'street vendor', 'amusement park', 'building', 'castle', 'church', 'fountain', 'garden', 'house', 'monument', 'museum', 'park', 'point of interest', 'square', 'stadium']

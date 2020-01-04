@@ -1,9 +1,9 @@
-const dotenv = require('dotenv');
+const dotenv = require('dotenv')
 const express = require('express')
 const bodyParser = require('body-parser')
 
 // configure dotenv
-dotenv.config();
+dotenv.config()
 
 // create express app
 const app = express()
@@ -28,7 +28,7 @@ mongoose.connect(databaseConfig.url, {
     useCreateIndex: true,
     useUnifiedTopology: true
 }).then(() => {
-    console.log("Successfully connected to the database")
+    console.log('Successfully connected to the database')
 }).catch(err => {
     console.log('Could not connect to the database. Exiting now...', err)
     process.exit()
@@ -41,7 +41,7 @@ require('./routes/PlaceRoutes.js')(app)
 require('./routes/SettingsRoutes.js')(app)
 require('./routes/UserRoutes.js')(app)
 
-console.log(`Using ${JSON.stringify(process.env.NODE_ENV)} ${app.settings.env} environment`)
+console.log(`Using ${process.env.NODE_ENV} environment`)
 
 const port = process.env.PORT || 3000
 

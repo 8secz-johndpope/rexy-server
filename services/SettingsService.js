@@ -5,13 +5,13 @@ const _ = require('lodash')
 
 // create
 const create = async (req, res) => {
-    console.log("SettingsService.create")
+    console.log('SettingsService.create')
 
     const { deviceToken } = req.body
 
     if (!deviceToken) {
         return res.status(400).send({
-            message: "Settings must have a device token."
+            message: 'Settings must have a device token.'
         })
     }
 
@@ -22,10 +22,10 @@ const create = async (req, res) => {
         res.send(savedSettings)
 
     } catch(err) {
-        console.log("SettingsService.create err", deviceToken, err)
+        console.log('SettingsService.create err', deviceToken, err)
 
         res.status(500).send({
-            message: err.message || "An error occurred while creating Settings."
+            message: err.message || 'An error occurred while creating Settings.'
         })
     }
 }
@@ -33,7 +33,7 @@ const create = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
-    console.log("SettingsService.getById")
+    console.log('SettingsService.getById')
 
     const settingsId = req.params.id
 
@@ -47,7 +47,7 @@ const getById = async (req, res) => {
         res.send(settings)
 
     } catch(err) {
-        console.log("SettingsService.getById err", settingsId, err)
+        console.log('SettingsService.getById err', settingsId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -64,7 +64,7 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
-    console.log("SettingsService.update")
+    console.log('SettingsService.update')
 
     const settingsId = req.params.id
     const { deviceToken, receiveSubscriptionNotifications } = req.body
@@ -82,7 +82,7 @@ const update = async (req, res) => {
         res.send(settings)
 
     } catch(err) {
-        console.log("SettingsService.update err", settingsId, err)
+        console.log('SettingsService.update err', settingsId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -99,7 +99,7 @@ const update = async (req, res) => {
 
 // delete
 const remove = async (req, res) => {
-    console.log("SettingsService.remove")
+    console.log('SettingsService.remove')
 
     const settingsId = req.params.id
 
@@ -113,7 +113,7 @@ const remove = async (req, res) => {
         res.send(settingsId)
         
     } catch(err) {
-        console.log("SettingsService.remove err", settingsId + err)
+        console.log('SettingsService.remove err', settingsId + err)
         
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({

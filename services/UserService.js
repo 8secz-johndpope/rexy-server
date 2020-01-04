@@ -4,65 +4,108 @@ const Settings = require('../models/Settings.js')
 const User = require('../models/User.js')
 
 const aws = require('aws-sdk')
+const axios = require('axios')
+const fs = require('fs')
 const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
 const multer = require('multer')
 const multerS3 = require('multer-s3')
-const url = require('url');
+const { promisify } = require('util')
+const querystring = require('querystring')
+const url = require('url')
 const _ = require('lodash')
 
+const jwksClient = require('jwks-rsa')
+const client = jwksClient({ jwksUri: process.env.APPLE_PUBLIC_KEY_URL })
+
+const getKey = (header, callback) => {
+    client.getSigningKey(header.kid, function(err, key) {
+        const signingKey = key.publicKey || key.rsaPublicKey
+        callback(null, signingKey)
+    })
+}
+
+const verifyPromised = promisify(jwt.verify)
+const signPromised = promisify(jwt.sign)
 
 // authenticate
+// https://developer.apple.com/documentation/signinwithapplerestapi/verifying_a_user
 const authenticate = async (req, res) => {
-    console.log("UserService.authenticate")
+    console.log('UserService.authenticate')
 
-    const { token } = req.body
+    const { authorizationCode, identityToken } = req.body
 
-    if (!token) {
+    console.log('authorizationCode', authorizationCode)
+    console.log('identityToken', identityToken)
+
+    if (!identityToken) {
         return res.status(400).send({
-            message: "No JWT provided."
+            message: 'No JWT provided.'
         })
     }
 
-    const { iss, aud, exp, sub, email } = jwt.decode(token, { json: true })
-    const xid = sub
-    const emailAddress = email
-
-    // verify signature somehow
-    // verify nonce somehow
-
-    if (!iss.includes(process.env.JWT_ISSUER)) {
-        return res.status(401).send({
-            message: "Authentication failed due to incorrect issuer."
-        })
-    }
-
-    if (aud !== process.env.JWT_AUDIENCE) {
-        return res.status(401).send({
-            message: "Authentication failed due to incorrect audience."
-        })
-    }
-
-    if (Date.now() >= exp * 1000) {
-        return res.status(401).send({
-            message: "Authentication failed due to expired token."
-        })
-    }
+    let xid
+    let emailAddress
 
     try {
+        const { iss, sub, aud, exp, iat, nonce, email, email_verified } = await verifyPromised(identityToken, getKey)
+        xid = sub
+        emailAddress = email
+        
+        if (!iss.includes(process.env.JWT_ISSUER)) {
+            return res.status(401).send({
+                message: 'Authentication failed due to incorrect issuer.'
+            })
+        }
+
+        if (aud !== process.env.JWT_AUDIENCE) {
+            return res.status(401).send({
+                message: 'Authentication failed due to incorrect audience.'
+            })
+        }
+
+        console.log('Token expires in', (exp * 1000) - Date.now())
+
+        const algorithm = 'ES256'
+        const header = {
+            alg: algorithm,
+            kid: process.env.APPLE_SIGN_IN_KEY
+        }
+        const claims = {
+            iss: process.env.APNS_TEAM,
+            iat: (Date.now() / 1000),
+            exp: (Date.now() / 1000) + 15552000, // 180 days (in seconds) from now, the max Apple will allow
+            aud: 'https://appleid.apple.com',
+            sub: process.env.JWT_AUDIENCE
+        }
+        const privateKey = fs.readFileSync('./config/AuthKey_VKSGV95576.p8', 'utf8')
+
+        const clientSecret = await signPromised(claims, privateKey, { algorithm, header })
+
+        let params = {
+            client_id: 'com.gdwsk.Rexy',
+            client_secret: clientSecret,
+            code: authorizationCode,
+            grant_type: 'authorization_code'
+        }
+
+        const response = await axios.post('https://appleid.apple.com/auth/token', querystring.stringify(params))
+        const { access_token, id_token, refresh_token } = response.data
+
         const user = await User.findOneAndUpdate({ xid }, { emailAddress }, {new: true})
-        .populate('bookmarkedPlaces lists settings subscribedLists visitedPlaces')
+        .populate('bookmarkedPlaces followers following lists settings subscribedLists visitedPlaces')
         if (!user) {
             return res.status(404).send({
                 message: `User not found with xid ${userId}`
             })
         }
-        res.send(user)
+        res.send({ accessToken: access_token, identityToken: id_token, refreshToken: refresh_token, user })
+        
     } catch (err) {
-        console.log("UserService.authenticate err", token, err)
+        console.log('UserService.authenticate err', identityToken, err)
 
         res.status(500).send({
-            message: err.message || "An error occurred while authenticating the User."
+            message: err.message || 'An error occurred while authenticating the User.'
         })
     }
 }
@@ -70,13 +113,13 @@ const authenticate = async (req, res) => {
 
 // create
 const create = async (req, res) => {
-    console.log("UserService.create")
+    console.log('UserService.create')
 
     var { bookmarkedPlaceIds, emailAddress, firstName, imagePath, isVerified, lastName, listIds, settingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid } = req.body
 
     if (!xid) {
         return res.status(400).send({
-            message: "User must have an XID."
+            message: 'User must have an XID.'
         })
     }
 
@@ -87,10 +130,10 @@ const create = async (req, res) => {
         res.send(savedUser)
 
     } catch (err) {
-        console.log("UserService.create err", xid, err)
+        console.log('UserService.create err', xid, err)
 
         res.status(500).send({
-            message: err.message || "An error occurred while creating the User."
+            message: err.message || 'An error occurred while creating the User.'
         })
     }
 }
@@ -98,7 +141,7 @@ const create = async (req, res) => {
 
 // get
 const get = async (req, res) => {
-    console.log("UserService.get")
+    console.log('UserService.get')
 
     const q = url.parse(req.url, true).query
     const { username } = q
@@ -113,10 +156,10 @@ const get = async (req, res) => {
         res.send(users)
 
     } catch (err) {
-        console.log("UserService.get err", username, err)
+        console.log('UserService.get err', username, err)
 
         res.status(500).send({
-            message: err.message || "An error occurred while retrieving Users."
+            message: err.message || 'An error occurred while retrieving Users.'
         })
     }
 }
@@ -124,18 +167,18 @@ const get = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
-    console.log("UserService.getById")
+    console.log('UserService.getById')
 
     const userId = req.params.id
     const q = url.parse(req.url, true).query
     const { type } = q
 
     try {
-        if (type === "xid") {
+        if (type === 'xid') {
             const user = await User.findOne({
                 xid: userId
             })
-            .populate('bookmarkedPlaces settings visitedPlaces')
+            .populate('bookmarkedPlaces followers following settings visitedPlaces')
             .populate({
                 path: 'lists',
                 populate: {
@@ -160,7 +203,7 @@ const getById = async (req, res) => {
         } else {
             const user = await User.findById(userId)
             .select('-xid -settings')
-            .populate('bookmarkedPlaces lists subscribedLists visitedPlaces')
+            .populate('bookmarkedPlaces followers following lists subscribedLists visitedPlaces')
             if (!user) {
                 return res.status(404).send({
                     message: `User not found with id ${userId}`
@@ -170,7 +213,7 @@ const getById = async (req, res) => {
         }
 
     } catch (err) {
-        console.log("UserService.getById err", userId, type, err)
+        console.log('UserService.getById err', userId, type, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -187,7 +230,7 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
-    console.log("UserService.update")
+    console.log('UserService.update')
 
     const userId = req.params.id
     const { bookmarkedPlaceIds, emailAddress, firstName, imagePath, isVerified, lastName, listIds, settingsId, phoneNumber, prefersUsername, subscribedListIds, username, visitedPlaceIds, xid } = req.body
@@ -209,7 +252,7 @@ const update = async (req, res) => {
             visitedPlaceIds,
             xid
         }, _.isUndefined), { new: true })
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -232,7 +275,7 @@ const update = async (req, res) => {
     res.send(user)
 
     } catch (err) {
-        console.log("UserService.update err", userId, err)
+        console.log('UserService.update err', userId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -249,7 +292,7 @@ const update = async (req, res) => {
 
 // delete
 const remove = async (req, res) => {
-    console.log("UserService.remove")
+    console.log('UserService.remove')
 
     const userId = req.params.id
 
@@ -263,26 +306,26 @@ const remove = async (req, res) => {
 
         Settings.deleteMany({ userId }, function (err) {
             if (err) {
-                console.log("UserService.remove Settings.deleteMany err", userId, err)
+                console.log('UserService.remove Settings.deleteMany err', userId, err)
             }
         })
 
         Comment.deleteMany({ userId }, function (err) {
             if (err) {
-                console.log("UserService.remove Comment.deleteMany err", userId, err)
+                console.log('UserService.remove Comment.deleteMany err', userId, err)
             }
         })
 
         List.updateMany({ $pull: { authorIds: mongoose.Types.ObjectId(userId), subscriberIds: mongoose.Types.ObjectId(userId) } }, function (err) {
             if (err) {
-                console.log("UserService.remove List.updateMany err", userId, err)
+                console.log('UserService.remove List.updateMany err', userId, err)
             }
         })
 
         res.send(userId)
 
     } catch (err) {
-        console.log("UserService.remove err", userId, err)
+        console.log('UserService.remove err', userId, err)
 
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
@@ -317,7 +360,7 @@ const storage = multerS3({
     s3,
     bucket: process.env.AWS_BUCKET_NAME,
     key: function (req, file, cb) {
-        cb(null, "users/" + req.params.id + "-" + Date.now().toString())
+        cb(null, 'users/' + req.params.id + '-' + Date.now().toString())
     }
 })
 
@@ -326,13 +369,13 @@ const uploadImage = multer({ fileFilter, storage }).single('image')
 
 // remove image
 const removeImage = async (req, res) => {
-    console.log("UserService.removeImage")
+    console.log('UserService.removeImage')
 
     const userId = req.params.id
 
     try {
         const user = await User.findById(userId)
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -357,12 +400,12 @@ const removeImage = async (req, res) => {
             return res.send(user)
         }
 
-        const oldKey = user.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
+        const oldKey = user.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, '')
         const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey }
         await s3.deleteObject(params).promise()
 
         const updatedUser = await User.findByIdAndUpdate(userId, { imagePath: null }, { new: true })
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -385,7 +428,7 @@ const removeImage = async (req, res) => {
         res.send(updatedUser)
 
     } catch (err) {
-        console.log("ListService.removeImage err", userId, err)
+        console.log('ListService.removeImage err', userId, err)
         
         return res.status(500).send({
             message: err.message || `An error occurred while removing an image from List with id ${userId}`
@@ -396,7 +439,7 @@ const removeImage = async (req, res) => {
 
 // user lists
 const getLists = async (req, res) => {
-    console.log("UserService.getLists")
+    console.log('UserService.getLists')
 
     const userId = req.params.id
 
@@ -427,10 +470,10 @@ const getLists = async (req, res) => {
         res.send(user.lists || [])
 
     } catch (err) {
-        console.log("UserService.getLists err", userId, err)
+        console.log('UserService.getLists err', userId, err)
 
         res.status(500).send({
-            message: err.message || "An error occurred while retrieving User's authored Lists."
+            message: err.message || 'An error occurred while retrieving User\'s authored Lists.'
         })
     }
 }
@@ -438,7 +481,7 @@ const getLists = async (req, res) => {
 
 // user subscriptions
 const getSubscriptions = async (req, res) => {
-    console.log("UserService.getSubscriptions")
+    console.log('UserService.getSubscriptions')
 
     const userId = req.params.id
 
@@ -469,10 +512,10 @@ const getSubscriptions = async (req, res) => {
         res.send(user.subscribedLists || [])
 
     } catch (err) {
-        console.log("getSubscriptions.getLists err", userId, err)
+        console.log('getSubscriptions.getLists err', userId, err)
 
         res.status(500).send({
-            message: err.message || "An error occurred while retrieving User's subscribed Lists."
+            message: err.message || 'An error occurred while retrieving User\'s subscribed Lists.'
         })
     }
 }
@@ -480,7 +523,7 @@ const getSubscriptions = async (req, res) => {
 
 // add bookmark
 const addBookmark = async (req, res) => {
-    console.log("UserService.addBookmark")
+    console.log('UserService.addBookmark')
 
     const userId = req.params.id
     const { _id, id } = req.body
@@ -488,19 +531,19 @@ const addBookmark = async (req, res) => {
 
     if (!userId) {
         return res.status(400).send({
-            message: "No User id provided to add bookmarked Place to."
+            message: 'No User id provided to add bookmarked Place to.'
         })
     }
 
     if (!placeId) {
         return res.status(400).send({
-            message: "Place to bookmark does not have an id."
+            message: 'Place to bookmark does not have an id.'
         })
     }
 
     try {
         const user = await User.findById(userId)
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -531,7 +574,7 @@ const addBookmark = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(userId, {
             bookmarkedPlaceIds: placeIds
         }, { new: true })
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -554,7 +597,7 @@ const addBookmark = async (req, res) => {
         res.send(updatedUser)
 
     } catch (err) {
-        console.log("UserService.addBookmark err", userId, placeId, err)
+        console.log('UserService.addBookmark err', userId, placeId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -571,13 +614,13 @@ const addBookmark = async (req, res) => {
 
 // get bookmarks
 const getBookmarks = async (req, res) => {
-    console.log("UserService.getBookmarks")
+    console.log('UserService.getBookmarks')
 
     const userId = req.params.id
 
     if (!userId) {
         return res.status(400).send({
-            message: "No User id provided to get bookmarked Places from."
+            message: 'No User id provided to get bookmarked Places from.'
         })
     }
 
@@ -593,7 +636,7 @@ const getBookmarks = async (req, res) => {
         res.send(user.bookmarkedPlaces || [])
 
     } catch (err) {
-        console.log("UserService.getBookmarks err", userId, err)
+        console.log('UserService.getBookmarks err', userId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -610,26 +653,26 @@ const getBookmarks = async (req, res) => {
 
 // delete bookmark
 const removeBookmark = async (req, res) => {
-    console.log("UserService.removeBookmark")
+    console.log('UserService.removeBookmark')
 
     const userId = req.params.id
     const placeId = req.params.placeId
 
     if (!userId) {
         return res.status(400).send({
-            message: "No User id provided to remove bookmarked Place from."
+            message: 'No User id provided to remove bookmarked Place from.'
         })
     }
 
     if (!placeId) {
         return res.status(400).send({
-            message: "Place to remove from bookmarks does not have an id."
+            message: 'Place to remove from bookmarks does not have an id.'
         })
     }
 
     try {
         const user = await User.findById(userId)
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -661,7 +704,7 @@ const removeBookmark = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(userId, {
             bookmarkedPlaceIds
         }, { new: true })
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -684,7 +727,7 @@ const removeBookmark = async (req, res) => {
         res.send(updatedUser)
 
     } catch (err) {
-        console.log("UserService.removeBookmark err", userId, placeId, err)
+        console.log('UserService.removeBookmark err', userId, placeId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -701,7 +744,7 @@ const removeBookmark = async (req, res) => {
 
 // add visited
 const addVisited = async (req, res) => {
-    console.log("UserService.addVisited")
+    console.log('UserService.addVisited')
 
     const userId = req.params.id
     const { _id, id } = req.body
@@ -709,19 +752,19 @@ const addVisited = async (req, res) => {
 
     if (!userId) {
         return res.status(400).send({
-            message: "No User id provided to add visited Place to."
+            message: 'No User id provided to add visited Place to.'
         })
     }
 
     if (!placeId) {
         return res.status(400).send({
-            message: "Place to mark as visited does not have an id."
+            message: 'Place to mark as visited does not have an id.'
         })
     }
 
     try {
         const user = await User.findById(userId)
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -752,7 +795,7 @@ const addVisited = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(userId, {
             visitedPlaceIds: placeIds
         }, { new: true })
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -775,7 +818,7 @@ const addVisited = async (req, res) => {
         res.send(updatedUser)
 
     } catch (err) {
-        console.log("UserService.addVisited err", userId, placeId, err)
+        console.log('UserService.addVisited err', userId, placeId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -792,13 +835,13 @@ const addVisited = async (req, res) => {
 
 // get visited
 const getVisited = async (req, res) => {
-    console.log("UserService.getVisited")
+    console.log('UserService.getVisited')
 
     const userId = req.params.id
 
     if (!userId) {
         return res.status(400).send({
-            message: "No User id provided to get visited Places from."
+            message: 'No User id provided to get visited Places from.'
         })
     }
 
@@ -814,7 +857,7 @@ const getVisited = async (req, res) => {
         res.send(user.visitedPlaces || [])
 
     } catch (err) {
-        console.log("UserService.getVisited err", userId, err)
+        console.log('UserService.getVisited err', userId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -830,26 +873,26 @@ const getVisited = async (req, res) => {
 
 // delete visited
 const removeVisited = async (req, res) => {
-    console.log("UserService.removeVisited")
+    console.log('UserService.removeVisited')
 
     const userId = req.params.id
     const placeId = req.params.placeId
 
     if (!userId) {
         return res.status(400).send({
-            message: "No User id provided to remove visited Place from."
+            message: 'No User id provided to remove visited Place from.'
         })
     }
 
     if (!placeId) {
         return res.status(400).send({
-            message: "Place to remove from visited does not have an id."
+            message: 'Place to remove from visited does not have an id.'
         })
     }
 
     try {
         const user = await User.findById(userId)
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -881,7 +924,7 @@ const removeVisited = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(userId, {
             visitedPlaceIds: placeIds
         }, { new: true })
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -904,7 +947,7 @@ const removeVisited = async (req, res) => {
         res.send(updatedUser)
 
     } catch (err) {
-        console.log("UserService.removeVisited err", userId, placeId, err)
+        console.log('UserService.removeVisited err', userId, placeId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -920,20 +963,20 @@ const removeVisited = async (req, res) => {
 
 // register
 const register = async (req, res) => {
-    console.log("UserService.register")
+    console.log('UserService.register')
 
     const userId = req.params.id
     const { deviceToken } = req.body
 
     if (!deviceToken) {
         return res.status(400).send({
-            message: "No device token provided to register."
+            message: 'No device token provided to register.'
         })
     }
 
     try {
         const user = await User.findById(userId)
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -958,7 +1001,7 @@ const register = async (req, res) => {
         }
 
         if (user.settings.deviceToken) {
-            console.log("update existing notification settings")
+            console.log('update existing notification settings')
             const updatedSettings = await Settings.findByIdAndUpdate(user.settingsId, { deviceToken })
             if (!updatedSettings) {
                 return res.status(404).send({
@@ -966,7 +1009,7 @@ const register = async (req, res) => {
                 })
             }
             const updatedUser = await User.findById(userId)
-            .populate('bookmarkedPlaces settings visitedPlaces')
+            .populate('bookmarkedPlaces followers following settings visitedPlaces')
             .populate({
                 path: 'lists',
                 populate: {
@@ -996,7 +1039,7 @@ const register = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(userId, {
             settingsId
         }, { new: true })
-        .populate('bookmarkedPlaces settings visitedPlaces')
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
             populate: {
@@ -1024,7 +1067,7 @@ const register = async (req, res) => {
         res.send(updatedUser)
 
     } catch (err) {
-        console.log("UserService.register err", userId, deviceToken, err)
+        console.log('UserService.register err', userId, deviceToken, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -1033,7 +1076,7 @@ const register = async (req, res) => {
         }
 
         res.status(500).send({
-            message: err.message || "An error occurred while registering device token."
+            message: err.message || 'An error occurred while registering device token.'
         })
     }
 }

@@ -1,25 +1,85 @@
 const Comment = require('../models/Comment.js')
 const List = require('../models/List.js')
 const User = require('../models/User.js')
-const APNSProvider = require('../services/NotificationService.js')
 
 const aws = require('aws-sdk')
 const mongoose = require('mongoose')
 const multer = require('multer')
 const multerS3 = require('multer-s3')
-const url = require('url');
+const url = require('url')
 const _ = require('lodash')
+
+const amqp = require('amqplib')
+
+
+// message queue
+var channel = null
+const notificationExchange = 'notificationExchange'
+const createExchange = 'createExchange'
+const updateExchange = 'updateExchange'
+const deleteExchange = 'deleteExchange'
+
+const start = async () => {
+    try {
+        const connection = await amqp.connect(process.env.CLOUDAMQP_URL)
+        const channel = await connection.createChannel()
+        await channel.assertExchange(notificationExchange, 'fanout', { durable: true })
+
+        return channel
+
+    } catch (err) {
+        console.error('[AMQP] start err', err)
+    }
+}
+start().then(async chan => {
+    channel = chan
+
+    const q = await channel.assertQueue('', { exclusive: true })
+    channel.bindQueue(q.queue, createExchange, '')
+    channel.consume(q.queue, createObject)
+    
+    const q2 = await channel.assertQueue('', { exclusive: true })
+    channel.bindQueue(q2.queue, updateExchange, '')
+    channel.consume(q2.queue, updateObject)
+
+    const q3 = await channel.assertQueue('', { exclusive: true })
+    channel.bindQueue(q3.queue, deleteExchange, '')
+    channel.consume(q3.queue, deleteObject)
+})
+
+const createObject = async (message) => {
+    const body = JSON.parse(message.content.toString())
+
+    console.log('ListService.createObject in %s', body.collection)
+}
+
+const updateObject = async (message) => {
+    const body = JSON.parse(message.content.toString())
+
+    console.log('ListService.updateObject in %s', body.collection)
+}
+
+const deleteObject = async (message) => {
+    const body = JSON.parse(message.content.toString())
+
+    console.log('ListService.deleteObject in %s', body.collection)
+}
+
+function notificationPublisher(actionType, data) {
+    const message = { actionType, data }
+    channel.publish(notificationExchange, '', Buffer.from(JSON.stringify(message)))
+}
 
 
 // create
 const create = async (req, res) => {
-    console.log("ListService.create")
+    console.log('ListService.create')
 
     const { accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, imagePath, isDeleted, isPrivate, placeIds, subscriberIds, title } = req.body
 
     if (!title) {
         return res.status(400).send({
-            message: "List must have a title."
+            message: 'List must have a title.'
         })
     }
 
@@ -30,10 +90,10 @@ const create = async (req, res) => {
         res.send(savedList)
         
     } catch (err) {
-        console.log("ListService.create err", title, err)
+        console.log('ListService.create err', title, err)
 
         res.status(500).send({
-            message: err.message || "An error occurred while creating the List."
+            message: err.message || 'An error occurred while creating the List.'
         })
     }
 }
@@ -41,7 +101,7 @@ const create = async (req, res) => {
 
 // get
 const get = async (req, res) => {
-    console.log("ListService.get")
+    console.log('ListService.get')
 
     const q = url.parse(req.url, true).query
     const { limit, sort } = q
@@ -50,10 +110,10 @@ const get = async (req, res) => {
         var lists = await List.find()
         .populate('authors')
 
-        if (sort && sort.includes("subscriberCount")) {
+        if (sort && sort.includes('subscriberCount')) {
             lists.sort(function(a, b) {
-                const aObject = sort.charAt(0) === "-" ? b : a
-                const bObject = sort.charAt(0) === "-" ? a : b
+                const aObject = sort.charAt(0) === '-' ? b : a
+                const bObject = sort.charAt(0) === '-' ? a : b
 
                 const aValue = aObject.subscriberIds.length === bObject.subscriberIds.length ? aObject.updatedAt : aObject.subscriberIds.length
                 const bValue = aObject.subscriberIds.length === bObject.subscriberIds.length ? bObject.updatedAt : bObject.subscriberIds.length
@@ -69,10 +129,10 @@ const get = async (req, res) => {
         res.send(lists)
         
     } catch (err) {
-        console.log("ListService.get err", q, err)
+        console.log('ListService.get err', q, err)
 
         res.status(500).send({
-            message: err.message || "An error occurred while retrieving Lists."
+            message: err.message || 'An error occurred while retrieving Lists.'
         })
     }
 }
@@ -80,7 +140,7 @@ const get = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
-    console.log("ListService.getById")
+    console.log('ListService.getById')
 
     const listId = req.params.id
 
@@ -95,7 +155,7 @@ const getById = async (req, res) => {
         res.send(list)
 
     } catch (err) {
-        console.log("ListService.getById err", listId, err)
+        console.log('ListService.getById err', listId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -112,7 +172,7 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
-    console.log("ListService.update")
+    console.log('ListService.update')
 
     const listId = req.params.id
     const { accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, imagePath, isDeleted, isPrivate, placeIds, subscriberIds, title } = req.body
@@ -141,7 +201,7 @@ const update = async (req, res) => {
         res.send(list)
 
     } catch (err) {
-        console.log("ListService.update err", listId, err)
+        console.log('ListService.update err', listId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -158,7 +218,7 @@ const update = async (req, res) => {
 
 // delete
 const remove = async (req, res) => {
-    console.log("ListService.remove")
+    console.log('ListService.remove')
 
     const listId = req.params.id
 
@@ -172,20 +232,20 @@ const remove = async (req, res) => {
 
         Comment.deleteMany({ listId }, function (err) {
             if (err) {
-                console.log("ListService.remove Comment.deleteMany err", listId, err)
+                console.log('ListService.remove Comment.deleteMany err', listId, err)
             }
         })
 
         User.updateMany({ $pull: { listIds: mongoose.Types.ObjectId(listId), subscribedListIds: mongoose.Types.ObjectId(listId) } }, function (err) {
             if (err) {
-                console.log("ListService.remove User.update err", listId, err)
+                console.log('ListService.remove User.update err', listId, err)
             }
         })
 
         res.send(listId)
         
     } catch (err) {
-        console.log("ListService.remove err", listId, err)
+        console.log('ListService.remove err', listId, err)
         
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
@@ -201,10 +261,10 @@ const remove = async (req, res) => {
 
 // search
 const search = async (req, res) => {
-    console.log("ListService.search")
+    console.log('ListService.search')
 
     return res.status(9000).send({
-        message: "This is a work in progress, please try again later."
+        message: 'This is a work in progress, please try again later.'
     })
 
     const q = url.parse(req.url, true).query
@@ -212,22 +272,22 @@ const search = async (req, res) => {
     
     if (!query) {
         return res.status(500).send({
-            message: "An error occurred while searching for Lists"
+            message: 'An error occurred while searching for Lists'
         })
     }
 
-    if (!query.endsWith("*")) {
-        query += "*"
+    if (!query.endsWith('*')) {
+        query += '*'
     }
 
-    console.log("query", query)
+    console.log('query', query)
 
     List.search({ query_string: { query }}, { hydrate: true }, function (err, results) {
         if (err) {
-            console.log("ListService.search err", q, err)
+            console.log('ListService.search err', q, err)
 
             return res.status(500).send({
-                message: err.message || "An error occurred while searching for Lists"
+                message: err.message || 'An error occurred while searching for Lists'
             })
         }
         res.send(results.hits.hits)
@@ -257,7 +317,7 @@ const storage = multerS3({
     s3,
     bucket: process.env.AWS_BUCKET_NAME,
     key: function (req, file, cb) {
-        cb(null, "lists/" + req.params.id + "-" + Date.now().toString())
+        cb(null, 'lists/' + req.params.id + '-' + Date.now().toString())
     }
 })
 
@@ -266,7 +326,7 @@ const uploadImage = multer({ fileFilter, storage }).single('image')
 
 // remove image
 const removeImage = async (req, res) => {
-    console.log("ListService.removeImage")
+    console.log('ListService.removeImage')
 
     const listId = req.params.id
 
@@ -275,7 +335,7 @@ const removeImage = async (req, res) => {
         .populate('authors places subscribers')
         if (!list) {
             return res.status(404).send({
-                message: `List not found with id" ${listId}`
+                message: `List not found with id' ${listId}`
             })
         }
 
@@ -283,7 +343,7 @@ const removeImage = async (req, res) => {
             return res.send(list)
         }
 
-        const oldKey = list.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, "")
+        const oldKey = list.imagePath.replace(`https://s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_BUCKET_NAME}/`, '')
         const params = { Bucket: process.env.AWS_BUCKET_NAME, Key: oldKey }
         await s3.deleteObject(params).promise()
 
@@ -297,10 +357,10 @@ const removeImage = async (req, res) => {
         res.send(updatedList)
 
     } catch (err) {
-        console.log("ListService.removeImage err", listId, err)
+        console.log('ListService.removeImage err', listId, err)
         
         return res.status(500).send({
-            message: err.message || "An error occurred while removing an image from List with id", listId
+            message: err.message || 'An error occurred while removing an image from List with id', listId
         })
     }
 }
@@ -308,7 +368,7 @@ const removeImage = async (req, res) => {
 
 // add author
 const addAuthor = async (req, res) => {
-    console.log("ListService.addAuthor")
+    console.log('ListService.addAuthor')
 
     const listId = req.params.id
     const { _id, id } = req.body
@@ -316,13 +376,13 @@ const addAuthor = async (req, res) => {
 
     if (!listId) {
         return res.status(400).send({
-            message: "No List id provided to add Author to."
+            message: 'No List id provided to add Author to.'
         })
     }
 
     if (!userId) {
         return res.status(400).send({
-            message: "User does not have an id."
+            message: 'User does not have an id.'
         })
     }
 
@@ -371,7 +431,7 @@ const addAuthor = async (req, res) => {
         res.send(updatedList)
 
     } catch (err) {
-        console.log("ListService.addAuthor err", listId, userId, err)
+        console.log('ListService.addAuthor err', listId, userId, err)
         
         return res.status(500).send({
             message: `An error occurred while adding author to List with id ${listId}`
@@ -382,20 +442,20 @@ const addAuthor = async (req, res) => {
 
 // remove author
 const removeAuthor = async (req, res) => {
-    console.log("ListService.removeAuthor")
+    console.log('ListService.removeAuthor')
 
     const listId = req.params.id
     const userId = req.params.userId
 
     if (!listId) {
         return res.status(400).send({
-            message: "No List id provided to remove author from."
+            message: 'No List id provided to remove author from.'
         })
     }
 
     if (!userId) {
         return res.status(400).send({
-            message: "Author to remove from List does not have an id."
+            message: 'Author to remove from List does not have an id.'
         })
     }
 
@@ -442,7 +502,7 @@ const removeAuthor = async (req, res) => {
         res.send(updatedList)
 
     } catch (err) {
-        console.log("ListService.removeAuthor err", listId, userId, err)
+        console.log('ListService.removeAuthor err', listId, userId, err)
 
         return res.status(500).send({
             message: `An error occurred while removing an author from List with id ${listId}`
@@ -453,7 +513,7 @@ const removeAuthor = async (req, res) => {
 
 // comments
 const getComments = async (req, res) => {
-    console.log("ListService.getComments")
+    console.log('ListService.getComments')
 
     const listId = req.params.id
 
@@ -463,10 +523,10 @@ const getComments = async (req, res) => {
         res.send(comments)
 
     } catch (err) {
-        console.log("ListService.getComments err", listId, err)
+        console.log('ListService.getComments err', listId, err)
 
         res.status(500).send({
-            message: err.message || "An error occurred while retrieving List's Comments."
+            message: err.message || 'An error occurred while retrieving List\'s Comments.'
         })
     }
 }
@@ -474,21 +534,22 @@ const getComments = async (req, res) => {
 
 // add place
 const addPlace = async (req, res) => {
-    console.log("ListService.addPlace")
+    console.log('ListService.addPlace')
 
+    const actor = req.user
     const listId = req.params.id
     const { _id, id, title } = req.body
     const placeId = _id || id
 
     if (!listId) {
         return res.status(400).send({
-            message: "No List id provided to add Place to."
+            message: 'No List id provided to add Place to.'
         })
     }
 
     if (!placeId) {
         return res.status(400).send({
-            message: "Place does not have an id."
+            message: 'Place does not have an id.'
         })
     }
 
@@ -501,6 +562,7 @@ const addPlace = async (req, res) => {
         }
 
         if (list.placeIds.includes(placeId)) {
+            console.log(`List already contains place with id ${placeId}`)
             return res.send(list)
         }
 
@@ -510,7 +572,14 @@ const addPlace = async (req, res) => {
         const updatedList = await List.findByIdAndUpdate(listId, {
             placeIds
         }, { new: true })
-        .populate('authors places')
+        .populate('places')
+        .populate({
+            path: 'authors',
+            populate: {
+                path: 'settings',
+                model: 'Settings'
+            }
+        })
         .populate({
             path: 'subscribers',
             populate: {
@@ -524,31 +593,56 @@ const addPlace = async (req, res) => {
             })
         }
 
-        if (updatedList.subscribers) {
-            const deviceTokens = updatedList.subscribers.filter(subscriber => subscriber.settings && subscriber.settings.deviceToken && subscriber.settings.receiveSubscriptionNotifications).map(subscriber => subscriber.settings.deviceToken)
-            
-            const notification = new APNSProvider.apn.Notification({
-                badge: 0,
-                body: title ? `Check out ${title}!` : "Check it out in Rexy!",
-                collapseId: updatedList._id,
-                payload: {
-                    "category": "kListUpdated",
-                    "listId": updatedList._id
-                },
-                titleLocArgs: ["title"],
-                titleLocKey: `A new place was added to ${updatedList.title}.`,
-                topic: "com.gdwsk.Rexy"
-            })
+        let authorIds = []
 
-            APNSProvider.provider.send(notification, deviceTokens).then(result => {
-                console.log("result", JSON.stringify(result))
-            })
+        if (updatedList.authors) {
+            authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id)
+
+            let deviceTokens = updatedList.authors.filter(author => author._id.toString() !== actor._id.toString() && _.get(author, 'settings.deviceToken') && _.get(author, 'settings.receiveSubscriptionNotifications')).map(author => author.settings.deviceToken)
+
+            if (deviceTokens && deviceTokens.length) {
+                const notification = {
+                    badge: 0,
+                    body: 'Check it out in Rexy!',
+                    collapseId: updatedList._id,
+                    payload: {
+                        'category': 'kPlaceAddedToAuthoredList',
+                        'listId': updatedList._id
+                    },
+                    // titleLocArgs: ['title'],
+                    titleLocKey: `${actor.username} added a new place to your list "${updatedList.title}".`,
+                    topic: 'com.gdwsk.Rexy'
+                }
+
+                notificationPublisher('placeAddedToOwnList', { deviceTokens, notification })
+            }
+        }
+
+        if (updatedList.subscribers) {
+            const deviceTokens = updatedList.subscribers.filter(subscriber => !authorIds.includes(subscriber._id.toString) && subscriber._id.toString() !== actor._id.toString() && _.get(subscriber, 'settings.deviceToken') && _.get(subscriber, 'settings.receiveSubscriptionNotifications')).map(subscriber => subscriber.settings.deviceToken)
+
+            if (deviceTokens && deviceTokens.length) {
+                const notification = {
+                    badge: 0,
+                    body: 'Check it out in Rexy!',
+                    collapseId: updatedList._id,
+                    payload: {
+                        'category': 'kPlaceAddedToSubscribedList',
+                        'listId': updatedList._id
+                    },
+                    // titleLocArgs: ['title'],
+                    titleLocKey: `A new place was added to ${updatedList.title}.`,
+                    topic: 'com.gdwsk.Rexy'
+                }
+
+                notificationPublisher('placeAddedToList', { deviceTokens, notification })
+            }
         }
 
         res.send(updatedList)
 
     } catch (err) {
-        console.log("ListService.addPlace err", listId, placeId, err)
+        console.log('ListService.addPlace err', listId, placeId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -565,20 +659,21 @@ const addPlace = async (req, res) => {
 
 // remove place
 const removePlace = async (req, res) => {
-    console.log("ListService.removePlace")
+    console.log('ListService.removePlace')
 
+    const actor = req.user
     const listId = req.params.id
     const placeId = req.params.placeId
 
     if (!listId) {
         return res.status(400).send({
-            message: "No List id provided to remove Place from."
+            message: 'No List id provided to remove Place from.'
         })
     }
 
     if (!placeId) {
         return res.status(400).send({
-            message: "No Place id provided to remove from List."
+            message: 'No Place id provided to remove from List.'
         })
     }
 
@@ -592,6 +687,7 @@ const removePlace = async (req, res) => {
         }
 
         if (!list.placeIds.includes(placeId)) {
+            console.log(`List doesn't contain place with id ${placeId}`)
             return res.send(list)
         }
 
@@ -608,10 +704,57 @@ const removePlace = async (req, res) => {
                 message: `List not found with id ${listId}`
             })
         }
+
+        let authorIds = []
+
+        if (updatedList.authors) {
+            authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id)
+
+            let deviceTokens = updatedList.authors.filter(author => author._id.toString() !== actor._id.toString() && _.get(author, 'settings.deviceToken') && _.get(author, 'settings.receiveSubscriptionNotifications')).map(author => author.settings.deviceToken)
+
+            if (deviceTokens && deviceTokens.length) {
+                const notification = {
+                    badge: 0,
+                    body: 'Check it out in Rexy!',
+                    collapseId: updatedList._id,
+                    payload: {
+                        'category': 'kPlaceRemovedFromAuthoredList',
+                        'listId': updatedList._id
+                    },
+                    // titleLocArgs: ['title'],
+                    titleLocKey: `${actor.username} removed a place from your list "${updatedList.title}".`,
+                    topic: 'com.gdwsk.Rexy'
+                }
+
+                notificationPublisher('placeAddedToOwnList', { deviceTokens, notification })
+            }
+        }
+
+        if (updatedList.subscribers) {
+            const deviceTokens = updatedList.subscribers.filter(subscriber => !authorIds.includes(subscriber._id.toString) && subscriber._id.toString() !== actor._id.toString() && _.get(subscriber, 'settings.deviceToken') && _.get(subscriber, 'settings.receiveSubscriptionNotifications')).map(subscriber => subscriber.settings.deviceToken)
+
+            if (deviceTokens && deviceTokens.length) {
+                const notification = {
+                    badge: 0,
+                    body: 'Check it out in Rexy!',
+                    collapseId: updatedList._id,
+                    payload: {
+                        'category': 'kPlaceRemovedFromSubscribedList',
+                        'listId': updatedList._id
+                    },
+                    // titleLocArgs: ['title'],
+                    titleLocKey: `A place was removed from ${updatedList.title}.`,
+                    topic: 'com.gdwsk.Rexy'
+                }
+
+                notificationPublisher('placeAddedToList', { deviceTokens, notification })
+            }
+        }
+
         res.send(updatedList)
 
     } catch (err) {
-        console.log("ListService.removePlace err", listId, placeId, err)
+        console.log('ListService.removePlace err', listId, placeId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -628,7 +771,7 @@ const removePlace = async (req, res) => {
 
 // add subscriber
 const addSubscriber = async (req, res) => {
-    console.log("ListService.addSubscriber")
+    console.log('ListService.addSubscriber')
 
     const listId = req.params.id
     const { _id, id } = req.body
@@ -636,13 +779,13 @@ const addSubscriber = async (req, res) => {
 
     if (!listId) {
         return res.status(400).send({
-            message: "No List id provided to add subscriber to."
+            message: 'No List id provided to add subscriber to.'
         })
     }
 
     if (!userId) {
         return res.status(400).send({
-            message: "Subscriber does not have an id."
+            message: 'Subscriber does not have an id.'
         })
     }
 
@@ -687,7 +830,7 @@ const addSubscriber = async (req, res) => {
         res.send(updatedList)
 
     } catch (err) {
-        console.log("ListService.addSubscriber err", listId, userId, err)
+        console.log('ListService.addSubscriber err', listId, userId, err)
         
         return res.status(500).send({
             message: `An error occurred while subscribing to List with id ${listId}`
@@ -698,20 +841,20 @@ const addSubscriber = async (req, res) => {
 
 // remove subscriber
 const removeSubscriber = async (req, res) => {
-    console.log("ListService.removeSubscriber")
+    console.log('ListService.removeSubscriber')
 
     const listId = req.params.id
     const userId = req.params.userId
 
     if (!listId) {
         return res.status(400).send({
-            message: "No List id provided to remove subscribed User from."
+            message: 'No List id provided to remove subscribed User from.'
         })
     }
 
     if (!userId) {
         return res.status(400).send({
-            message: "User to remove from subscribers does not have an id."
+            message: 'User to remove from subscribers does not have an id.'
         })
     }
 
@@ -758,7 +901,7 @@ const removeSubscriber = async (req, res) => {
         res.send(updatedList)
 
     } catch (err) {
-        console.log("ListService.removeSubscriber", listId, userId, err)
+        console.log('ListService.removeSubscriber', listId, userId, err)
 
         return res.status(500).send({
             message: `An error occurred while unsubscribing to List with id ${listId}`

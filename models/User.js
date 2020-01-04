@@ -1,19 +1,21 @@
 const mongoose = require('mongoose')
 
 const UserSchema = mongoose.Schema({
-    bookmarkedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
+    bookmarkedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Place' }],
     emailAddress: { type: String, unique: true, sparse: true },
     firstName: { type: String },
+    followerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    followingIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     imagePath: { type: String },
     isVerified: { type: Boolean, default: false },
     lastName: { type: String },
-    listIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
+    listIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'List' }],
     phoneNumber: { type: String, unique: true, sparse: true },
     prefersUsername: { type: Boolean, defaults: false },
-    settingsId: { type: mongoose.Schema.Types.ObjectId, ref: "Settings" },
-    subscribedListIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "List" }],
+    settingsId: { type: mongoose.Schema.Types.ObjectId, ref: 'Settings' },
+    subscribedListIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'List' }],
     username: { type: String, unique: true, sparse: true },
-    visitedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place" }],
+    visitedPlaceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Place' }],
     xid: { type: String, required: true, unique: true, immutable: true, index: true }
 }, {
     id: false,
@@ -23,6 +25,18 @@ const UserSchema = mongoose.Schema({
 UserSchema.virtual('bookmarkedPlaces', {
     ref: 'Place',
     localField: 'bookmarkedPlaceIds',
+    foreignField: '_id'
+})
+
+UserSchema.virtual('followers', {
+    ref: 'User',
+    localField: 'followerIds',
+    foreignField: '_id'
+})
+
+UserSchema.virtual('following', {
+    ref: 'User',
+    localField: 'followingIds',
     foreignField: '_id'
 })
 
@@ -50,6 +64,14 @@ UserSchema.virtual('visitedPlaces', {
     localField: 'visitedPlaceIds',
     foreignField: '_id'
 })
+
+// UserSchema.virtual('displayName').get(function() {
+//     if (username && prefersUsername) {
+//         return username
+//     }
+
+//     return [firstName, lastName].join(' ')
+// })
 
 UserSchema.set('toObject', { virtuals: true })
 UserSchema.set('toJSON', { virtuals: true })

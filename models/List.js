@@ -3,7 +3,7 @@ const mongoosastic = require('mongoosastic')
 
 const ListSchema = mongoose.Schema({
     accoladesYear: { type: String, es_indexed: true },
-    authorIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", es_indexed: false }],
+    authorIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', es_indexed: false }],
     date: { type: Date, default: Date.now, es_indexed: false },
     dateBasedAccolades: { type: Boolean, default: false, es_indexed: false },
     description: { type: String, es_indexed: true },
@@ -11,8 +11,8 @@ const ListSchema = mongoose.Schema({
     imagePath: { type: String , es_indexed: false },
     isDeleted: { type: Boolean, default: false, es_indexed: false },
     isPrivate: { type: Boolean, default: false, es_indexed: false },
-    placeIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Place", es_indexed: false }],
-    subscriberIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", es_indexed: false }],
+    placeIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Place', es_indexed: false }],
+    subscriberIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', es_indexed: false }],
     title: { type: String, required: true, es_indexed: true }
 }, {
     id: false,

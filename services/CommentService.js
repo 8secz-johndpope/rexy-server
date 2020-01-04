@@ -1,30 +1,30 @@
 const Comment = require('../models/Comment.js')
 
-const url = require('url');
+const url = require('url')
 const _ = require('lodash')
 
 
 // create
 const create = async (req, res) => {
-    console.log("CommentService.create")
+    console.log('CommentService.create')
 
     const { listId, placeId, text, userId } = req.body
 
     if (!text) {
         return res.status(400).send({
-            message: "Comment must have text."
+            message: 'Comment must have text.'
         })
     }
 
     if (!userId) {
         return res.status(400).send({
-            message: "Comment must have a user."
+            message: 'Comment must have a user.'
         })
     }   
 
     if (!listId && !placeId) {
         return res.status(400).send({
-            message: "Comment must have either a list or a place."
+            message: 'Comment must have either a list or a place.'
         })
     }
 
@@ -35,10 +35,10 @@ const create = async (req, res) => {
         res.send(savedComment)
 
     } catch(err) {
-        console.log("CommentService.create err", listId, placeId, text, userId, err)
+        console.log('CommentService.create err', listId, placeId, text, userId, err)
 
         res.status(500).send({
-            message: err.message || "An error occurred while creating the Comment."
+            message: err.message || 'An error occurred while creating the Comment.'
         })
     }
 }
@@ -46,7 +46,7 @@ const create = async (req, res) => {
 
 // get
 const get = async (req, res) => {
-    console.log("CommentService.get")
+    console.log('CommentService.get')
 
     const q = url.parse(req.url, true).query
 
@@ -56,10 +56,10 @@ const get = async (req, res) => {
         res.send(comments)
 
     } catch(err) {
-        console.log("CommentService.get err", q, err)
+        console.log('CommentService.get err', q, err)
 
         res.status(500).send({
-            message: err.message || "An error occurred while retrieving Comments."
+            message: err.message || 'An error occurred while retrieving Comments.'
         })
     }
 }
@@ -67,7 +67,7 @@ const get = async (req, res) => {
 
 // get by id
 const getById = async (req, res) => {
-    console.log("CommentService.getById")
+    console.log('CommentService.getById')
 
     const commentId = req.params.id
 
@@ -82,7 +82,7 @@ const getById = async (req, res) => {
         res.send(comment)
 
     } catch(err) {
-        console.log("CommentService.getById err", commentId, err)
+        console.log('CommentService.getById err', commentId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -99,7 +99,7 @@ const getById = async (req, res) => {
 
 // update
 const update = async (req, res) => {
-    console.log("CommentService.update")
+    console.log('CommentService.update')
 
     const commentId = req.params.id
     const { listId, placeId, text, userId } = req.body
@@ -120,7 +120,7 @@ const update = async (req, res) => {
         res.send(comment)
 
     } catch(err) {
-        console.log("CommentService.update err", commentId, err)
+        console.log('CommentService.update err', commentId, err)
 
         if (err.kind === 'ObjectId') {
             return res.status(404).send({
@@ -137,7 +137,7 @@ const update = async (req, res) => {
 
 // delete
 const remove = async (req, res) => {
-    console.log("CommentService.remove")
+    console.log('CommentService.remove')
 
     const commentId = req.params.id
 
@@ -151,7 +151,7 @@ const remove = async (req, res) => {
         res.send(commentId)
         
     } catch(err) {
-        console.log("CommentService.remove err", commentId, err)
+        console.log('CommentService.remove err', commentId, err)
         
         if (err.kind === 'ObjectId' || err.name === 'NotFound') {
             return res.status(404).send({
