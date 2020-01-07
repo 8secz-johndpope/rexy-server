@@ -717,7 +717,7 @@ const addPlace = async (req, res) => {
         if (updatedList.authors) {
             authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id)
 
-            const targets = updatedList.authors//.filter(user => user._id.toString() !== actor._id.toString())
+            const targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
             if (deviceTokens && deviceTokens.length) {
