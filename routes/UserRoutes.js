@@ -71,6 +71,12 @@ module.exports = (app) => {
     })
     app.delete('/users/:id/image', auth, users.removeImage)
 
+    // user followers and following
+    app.get('/users/:id/followers', auth, users.getFollowers)
+    app.post('/users/:id/following', auth, users.addFollowing)
+    app.delete('/users/:id/following/:userId', auth, users.removeFollowing)
+    app.get('/users/:id/following', auth, users.getFollowing)
+
     // user lists and subscriptions
     app.get('/users/:id/lists', auth, users.getLists)
     app.get('/users/:id/subscriptions', auth, users.getSubscriptions)

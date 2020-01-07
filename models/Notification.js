@@ -26,7 +26,7 @@ const NotificationObjectSchema = mongoose.Schema({
     id: false
 })
 
-const notificationTypes = ['listShared', 'placeShared', 'userShared', 'addedAsAuthor', 'removedAsAuthor', 'placeAddedToAuthoredList', 'placeRemovedFromAuthoredList', 'placeAddedToSubscribedList', 'placeRemovedFromSubscribedList', 'authorAddedToAuthoredList', 'authorRemovedFromAuthoredList']
+const notificationTypes = ['kFollowedUserCreatedList', 'kAddedAsAuthor', 'kAuthorAddedToAuthoredList', 'kAuthorAddedToSubscribedList', 'kRemovedAsAuthor', 'kAuthorRemovedFromAuthoredList', 'kAuthorRemovedFromSubscribedList', 'kPlaceAddedToAuthoredList', 'kPlaceAddedToSubscribedList', 'kPlaceRemovedFromAuthoredList', 'kPlaceRemovedFromSubscribedList', 'kListShared', 'kPlaceShared', 'kUserShared', 'kCommentAddedToPlaceOnAuthoredList', 'kCommentRemovedFromPlaceOnAuthoredList', 'kNewSubscriberOnAuthoredList', 'kNewFollower']
 
 const NotificationSchema = mongoose.Schema({
     actorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -80,28 +80,11 @@ NotificationSchema.virtual('target', {
 NotificationSchema.set('toObject', { virtuals: true })
 NotificationSchema.set('toJSON', { virtuals: true })
 
-NotificationSchema.pre('save', async function() {
-    const List = require('../models/List.js')
-    const Place = require('../models/Place.js')
-    const User = require('../models/User.js')
-    
-    const actor = await User.findById(this.actorId)
+module.exports = mongoose.model('Notification', NotificationSchema)
 
-    var list
-    if (this.object.listId) {
-        list = await List.findById(this.object.listId)
-    }
 
-    var place
-    if (this.object.placeId) {
-        place = await Place.findById(this.object.placeId)
-    }
 
-    var user
-    if (this.object.userId) {
-        user = await User.findById(this.object.userId)
-    }
-
+/*
     switch (this.type) {
         case 'listShared':
             this.attributedDescription = {
@@ -343,76 +326,4 @@ NotificationSchema.pre('save', async function() {
             break
     }
 })
-
-NotificationSchema.post('save', function() {
-    console.log('post save')
-    NotificationSchema.send(savedNotification, function (err) {
-        console.log('sent')
-    })
-})
-
-NotificationSchema.statics.send = function send (notification, cb) {
-    const APNSProvider = require('../services/NotificationService.js')
-
-    var pushNotification = new APNSProvider.apn.Notification({
-        badge: 0,
-        body: 'Check it out in Rexy!',
-        // collapseId: updatedList._id,
-        // payload: {
-        //     'category': 'kListUpdated',
-        //     'listId': updatedList._id
-        // },
-        // titleLocArgs: ['title'],
-        // titleLocKey: `A new place was added to ${updatedList.title}.`,
-        topic: 'com.gdwsk.Rexy'
-    })
-
-    var deviceTokens = []
-
-    switch (notification.type) {
-        case 'listShared':
-            if (notification.target.settings.deviceToken) {
-
-            }
-
-            break
-
-        case 'placeShared':
-            break
-
-        case 'userShared':
-            break
-
-        case 'addedAsAuthor':
-            break
-
-        case 'removedAsAuthor':
-            break
-
-        case 'placeAddedToAuthoredList':
-            break
-
-        case 'placeRemovedFromAuthoredList':
-            break
-
-        case 'placeAddedToSubscribedList':
-            break
-
-        case 'placeRemovedFromSubscribedList':
-            break
-
-        case 'authorAddedToAuthoredList':
-            break
-
-        case 'authorRemovedFromAuthoredList':
-            break
-    }
-
-    APNSProvider.provider.send(pushNotification, deviceTokens).then(result => {
-        console.log('result', JSON.stringify(result))
-    })
-
-    cb()
-}
-
-module.exports = mongoose.model('Notification', NotificationSchema)
+*/

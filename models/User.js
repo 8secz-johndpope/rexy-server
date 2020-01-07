@@ -65,13 +65,19 @@ UserSchema.virtual('visitedPlaces', {
     foreignField: '_id'
 })
 
-// UserSchema.virtual('displayName').get(function() {
-//     if (username && prefersUsername) {
-//         return username
-//     }
+UserSchema.virtual('displayName').get(function() {
+    if (this.username && this.prefersUsername) {
+        return this.username
+    }
 
-//     return [firstName, lastName].join(' ')
-// })
+    const fullName = [this.firstName, this.lastName].join(' ').trim()
+
+    if (fullName.length) {
+        return fullName
+    } else {
+        return null
+    }
+})
 
 UserSchema.set('toObject', { virtuals: true })
 UserSchema.set('toJSON', { virtuals: true })

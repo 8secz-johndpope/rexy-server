@@ -1,5 +1,6 @@
 const Comment = require('../models/Comment.js')
 const List = require('../models/List.js')
+const Place = require('../models/Place.js')
 const User = require('../models/User.js')
 
 const aws = require('aws-sdk')
@@ -9,10 +10,10 @@ const multerS3 = require('multer-s3')
 const url = require('url')
 const _ = require('lodash')
 
-const amqp = require('amqplib')
-
 
 // message queue
+const amqp = require('amqplib')
+
 var channel = null
 const notificationExchange = 'notificationExchange'
 const createExchange = 'createExchange'
@@ -50,23 +51,23 @@ start().then(async chan => {
 const createObject = async (message) => {
     const body = JSON.parse(message.content.toString())
 
-    console.log('ListService.createObject in %s', body.collection)
+    console.log('ListService.createObject in', body.collection)
 }
 
 const updateObject = async (message) => {
     const body = JSON.parse(message.content.toString())
 
-    console.log('ListService.updateObject in %s', body.collection)
+    console.log('ListService.updateObject in', body.collection)
 }
 
 const deleteObject = async (message) => {
     const body = JSON.parse(message.content.toString())
 
-    console.log('ListService.deleteObject in %s', body.collection)
+    console.log('ListService.deleteObject in', body.collection)
 }
 
-function notificationPublisher(actionType, data) {
-    const message = { actionType, data }
+function notificationPublisher(notificationType, data) {
+    const message = { notificationType, data }
     channel.publish(notificationExchange, '', Buffer.from(JSON.stringify(message)))
 }
 
@@ -75,6 +76,7 @@ function notificationPublisher(actionType, data) {
 const create = async (req, res) => {
     console.log('ListService.create')
 
+    const actor = req.user
     const { accoladesYear, authorIds, date, dateBasedAccolades, description, groupName, imagePath, isDeleted, isPrivate, placeIds, subscriberIds, title } = req.body
 
     if (!title) {
@@ -87,6 +89,30 @@ const create = async (req, res) => {
 
     try {
         const savedList = await list.save()
+
+        if (actor.followers) {
+            const targets = actor.followers.filter(user => user._id.toString() !== actor._id.toString())
+            const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
+
+            if (deviceTokens && deviceTokens.length) {
+                const notification = {
+                    badge: 0,
+                    body: `Check out ${list.title} in Rexy!`,
+                    // collapseId: list._id,
+                    payload: {
+                        'actorId': actor._id,
+                        'category': 'kFollowedUserCreatedList',
+                        'listId': list._id
+                    },
+                    threadId: actor._id,
+                    titleLocKey: `${actor.displayName.length ? actor.displayName : 'A user you follow'} created a list`,
+                    topic: 'com.gdwsk.Rexy'
+                }
+
+                notificationPublisher('kFollowedUserCreatedList', { deviceTokens, notification, actor, list, targets })
+            }
+        }
+
         res.send(savedList)
         
     } catch (err) {
@@ -370,6 +396,7 @@ const removeImage = async (req, res) => {
 const addAuthor = async (req, res) => {
     console.log('ListService.addAuthor')
 
+    const actor = req.user
     const listId = req.params.id
     const { _id, id } = req.body
     const userId = _id || id
@@ -387,47 +414,99 @@ const addAuthor = async (req, res) => {
     }
 
     try {
-        const list = await List.findById(listId)
-        .populate('authors places subscribers')
-        if (!list) {
-            return res.status(404).send({
-                message: `List not found with id ${listId}`
-            })
-        }
-
-        const user = await User.findById(userId)
-        if (!user) {
-            return res.status(404).send({
-                message: `User not found with id ${userId}`
-            })
-        }
-
-        if (list.authorIds.includes(userId) && user.listIds.includes(listId)) {
-            return res.send(list)
-        }
-
-        var authorIds = list.authorIds || []
-        authorIds.addToSet(userId)
-
-        var listIds = user.listIds
-        if (!listIds) {
-            listIds = [listId]
-        } else {
-            listIds.addToSet(listId)
-        }
-
-        await User.findByIdAndUpdate(userId, {
-            listIds
+        const updatedList = await List.findByIdAndUpdate(listId, { $addToSet: { authorIds: userId } }, { new: true })
+        .populate('places')
+        .populate({
+            path: 'authors',
+            populate: {
+                path: 'settings',
+                model: 'Settings'
+            }
         })
-        const updatedList = await List.findByIdAndUpdate(listId, {
-            authorIds
-        }, { new: true })
-        .populate('authors places subscribers')
+        .populate({
+            path: 'subscribers',
+            populate: {
+                path: 'settings',
+                model: 'Settings'
+            }
+        })
         if (!updatedList) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
             })
         }
+
+        const user = await User.findByIdAndUpdate({ _id: userId }, { $addToSet: { listIds: listId } }, { new: true })
+        .populate('settings')
+
+        if (user.settings && _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')) {
+            const notification = {
+                badge: 0,
+                body: `Congrats! ${actor.displayName} added you as an author on their shared list.`,
+                // collapseId: updatedList._id,
+                payload: {
+                    'actorId': actor._id,
+                    'category': 'kAddedAsAuthor',
+                    'listId': updatedList._id
+                },
+                threadId: updatedList._id,
+                titleLocKey: updatedList.title,
+                topic: 'com.gdwsk.Rexy'
+            }
+
+            notificationPublisher('kAddedAsAuthor', { deviceTokens: [user.settings.deviceToken], notification, actor, list: updatedList, targets: [user] })
+        }
+
+        let authorIds = []
+
+        if (updatedList.authors) {
+            authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id)
+
+            const targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
+            const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
+
+            if (deviceTokens && deviceTokens.length) {
+                const notification = {
+                    badge: 0,
+                    body: `${actor.displayName} added ${user.displayName.length ? `${user.displayName} as an author` : 'a new author'} on your shared list.`,
+                    // collapseId: updatedList._id,
+                    payload: {
+                        'actorId': actor._id,
+                        'category': 'kAuthorAddedToAuthoredList',
+                        'listId': updatedList._id
+                    },
+                    threadId: updatedList._id,
+                    titleLocKey: updatedList.title,
+                    topic: 'com.gdwsk.Rexy'
+                }
+
+                notificationPublisher('kAuthorAddedToAuthoredList', { deviceTokens, notification, actor, list: updatedList, targets, user })
+            }
+        }
+
+        if (updatedList.subscribers) {
+            const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString) && user._id.toString() !== actor._id.toString())
+            const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
+
+            if (deviceTokens && deviceTokens.length) {
+                const notification = {
+                    badge: 0,
+                    body: `${user.displayName.length ? `${user.displayName} was added as an author` : 'A new author was added'} on your subscribed list.`,
+                    // collapseId: updatedList._id,
+                    payload: {
+                        'actorId': actor._id,
+                        'category': 'kAuthorAddedToSubscribedList',
+                        'listId': updatedList._id
+                    },
+                    threadId: updatedList._id,
+                    titleLocKey: updatedList.title,
+                    topic: 'com.gdwsk.Rexy'
+                }
+
+                notificationPublisher('kAuthorAddedToSubscribedList', { deviceTokens, notification, list: updatedList, targets, user })
+            }
+        }
+
         res.send(updatedList)
 
     } catch (err) {
@@ -444,6 +523,7 @@ const addAuthor = async (req, res) => {
 const removeAuthor = async (req, res) => {
     console.log('ListService.removeAuthor')
 
+    const actor = req.user
     const listId = req.params.id
     const userId = req.params.userId
 
@@ -460,45 +540,99 @@ const removeAuthor = async (req, res) => {
     }
 
     try {
-        const list = await List.findById(listId)
-        .populate('authors places subscribers')
-        if (!list) {
-            return res.status(404).send({
-                message: `List not found with id ${listId}`
-            })
-        }
-
-        const user = await User.findById(userId)
-        if (!user) {
-            return res.status(404).send({
-                message: `User not found with id ${userId}`
-            })
-        }
-
-        if (!list.authorIds.includes(userId) && !user.listIds.includes(listId)) {
-            return res.send(list)
-        }
-
-        const authorIds = list.authorIds.filter(function(id) {
-            return id != userId
+        const updatedList = await List.findOneAndUpdate({ _id: listId }, { $pull: { authorIds: userId } }, { new: true })
+        .populate('places')
+        .populate({
+            path: 'authors',
+            populate: {
+                path: 'settings',
+                model: 'Settings'
+            }
         })
-
-        const listIds = user.listIds.filter(function(id) {
-            return id != listId
+        .populate({
+            path: 'subscribers',
+            populate: {
+                path: 'settings',
+                model: 'Settings'
+            }
         })
-
-        await User.findByIdAndUpdate(userId, {
-            listIds
-        })
-        const updatedList = await List.findByIdAndUpdate(listId, {
-            authorIds
-        }, { new: true })
-        .populate('authors places subscribers')
         if (!updatedList) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
             })
         }
+
+        const user = await User.findOneAndUpdate({ _id: userId }, { $pull: { listIds: listId } })
+        .populate('settings')
+
+        if (user.settings && _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')) {
+            const notification = {
+                badge: 0,
+                body: `Aww... ${actor.displayName} removed you as an author from their list.`,
+                // collapseId: updatedList._id,
+                payload: {
+                    'actorId': actor._id,
+                    'category': 'kRemovedAsAuthor',
+                    'listId': updatedList._id
+                },
+                threadId: updatedList._id,
+                titleLocKey: updatedList.title,
+                topic: 'com.gdwsk.Rexy'
+            }
+
+            notificationPublisher('kRemovedAsAuthor', { deviceTokens: [user.settings.deviceToken], notification, actor, list: updatedList, targets: [user] })
+        }
+
+        let authorIds = []
+
+        if (updatedList.authors) {
+            authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id)
+
+            const targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
+            const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
+
+            if (deviceTokens && deviceTokens.length) {
+                const notification = {
+                    badge: 0,
+                    body: `${actor.displayName} removed ${user.displayName.length ? `${user.displayName} as an author` : 'an author'} from your shared list.`,
+                    // collapseId: updatedList._id,
+                    payload: {
+                        'actorId': actor._id,
+                        'category': 'kAuthorRemovedFromAuthoredList',
+                        'listId': updatedList._id
+                    },
+                    threadId: updatedList._id,
+                    titleLocKey: updatedList.title,
+                    topic: 'com.gdwsk.Rexy'
+                }
+
+                notificationPublisher('kAuthorRemovedFromAuthoredList', { deviceTokens, notification, actor, list: updatedList, user, targets })
+            }
+        }
+
+        if (updatedList.subscribers) {
+            const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString) && user._id.toString() !== actor._id.toString())
+            const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
+
+            if (deviceTokens && deviceTokens.length) {
+                const notification = {
+                    badge: 0,
+                    body: `${user.displayName.length ? `${user.displayName} was removed as an author` : 'An author was removed'} from your subscribed list.`,
+                    // collapseId: updatedList._id,
+                    payload: {
+                        'actorId': actor._id,
+                        'category': 'kAuthorRemovedFromSubscribedList',
+                        'listId': updatedList._id
+                    },
+                    threadId: updatedList._id,
+                    titleLocKey: updatedList.title,
+                    topic: 'com.gdwsk.Rexy'
+                }
+
+                notificationPublisher('kAuthorRemovedFromSubscribedList', { deviceTokens, notification, list: updatedList, user, targets })
+            }
+        }
+
         res.send(updatedList)
 
     } catch (err) {
@@ -538,7 +672,7 @@ const addPlace = async (req, res) => {
 
     const actor = req.user
     const listId = req.params.id
-    const { _id, id, title } = req.body
+    const { _id, id } = req.body
     const placeId = _id || id
 
     if (!listId) {
@@ -554,24 +688,7 @@ const addPlace = async (req, res) => {
     }
 
     try {
-        const list = await List.findById(listId)
-        if (!list) {
-            return res.status(404).send({
-                message: `List not found with id ${listId}`
-            })
-        }
-
-        if (list.placeIds.includes(placeId)) {
-            console.log(`List already contains place with id ${placeId}`)
-            return res.send(list)
-        }
-
-        var placeIds = list.placeIds || []
-        placeIds.addToSet(placeId)
-
-        const updatedList = await List.findByIdAndUpdate(listId, {
-            placeIds
-        }, { new: true })
+        const updatedList = await List.findByIdAndUpdate(listId, { $addToSet: { placeIds: placeId } }, { new: true })
         .populate('places')
         .populate({
             path: 'authors',
@@ -593,49 +710,56 @@ const addPlace = async (req, res) => {
             })
         }
 
+        const place = await Place.findById(placeId)
+
         let authorIds = []
 
         if (updatedList.authors) {
             authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id)
 
-            let deviceTokens = updatedList.authors.filter(author => author._id.toString() !== actor._id.toString() && _.get(author, 'settings.deviceToken') && _.get(author, 'settings.receiveSubscriptionNotifications')).map(author => author.settings.deviceToken)
+            const targets = updatedList.authors//.filter(user => user._id.toString() !== actor._id.toString())
+            const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
             if (deviceTokens && deviceTokens.length) {
                 const notification = {
                     badge: 0,
-                    body: 'Check it out in Rexy!',
-                    collapseId: updatedList._id,
+                    body: `${actor.displayName} added ${place.title.length ? place.title : 'a place'} to your shared list.`,
+                    // collapseId: updatedList._id,
                     payload: {
+                        'actorId': actor._id,
                         'category': 'kPlaceAddedToAuthoredList',
-                        'listId': updatedList._id
+                        'listId': updatedList._id,
+                        'placeId': placeId
                     },
-                    // titleLocArgs: ['title'],
-                    titleLocKey: `${actor.username} added a new place to your list "${updatedList.title}".`,
+                    threadId: updatedList._id,
+                    titleLocKey: updatedList.title,
                     topic: 'com.gdwsk.Rexy'
                 }
 
-                notificationPublisher('placeAddedToOwnList', { deviceTokens, notification })
+                notificationPublisher('kPlaceAddedToAuthoredList', { deviceTokens, notification, actor, list: updatedList, place, targets })
             }
         }
 
         if (updatedList.subscribers) {
-            const deviceTokens = updatedList.subscribers.filter(subscriber => !authorIds.includes(subscriber._id.toString) && subscriber._id.toString() !== actor._id.toString() && _.get(subscriber, 'settings.deviceToken') && _.get(subscriber, 'settings.receiveSubscriptionNotifications')).map(subscriber => subscriber.settings.deviceToken)
+            const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString) && user._id.toString() !== actor._id.toString())
+            const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
             if (deviceTokens && deviceTokens.length) {
                 const notification = {
                     badge: 0,
-                    body: 'Check it out in Rexy!',
-                    collapseId: updatedList._id,
+                    body: `${place.title.length ? place.title : 'A place'} was added to your subscribed list.`,
+                    // collapseId: updatedList._id,
                     payload: {
                         'category': 'kPlaceAddedToSubscribedList',
-                        'listId': updatedList._id
+                        'listId': updatedList._id,
+                        'placeId': placeId
                     },
-                    // titleLocArgs: ['title'],
-                    titleLocKey: `A new place was added to ${updatedList.title}.`,
+                    threadId: updatedList._id,
+                    titleLocKey: updatedList.title,
                     topic: 'com.gdwsk.Rexy'
                 }
 
-                notificationPublisher('placeAddedToList', { deviceTokens, notification })
+                notificationPublisher('kPlaceAddedToSubscribedList', { deviceTokens, notification, list: updatedList, place, targets })
             }
         }
 
@@ -678,76 +802,77 @@ const removePlace = async (req, res) => {
     }
 
     try {
-        const list = await List.findById(listId)
-        .populate('authors places subscribers')
-        if (!list) {
-            return res.status(404).send({
-                message: `List not found with id ${listId}`
-            })
-        }
-
-        if (!list.placeIds.includes(placeId)) {
-            console.log(`List doesn't contain place with id ${placeId}`)
-            return res.send(list)
-        }
-
-        const placeIds = list.placeIds.filter(function(item) {
-            return item != placeId
+        const updatedList = await List.findByIdAndUpdate(listId, { $pull: { placeIds: placeId } }, { new: true })
+        .populate('places')
+        .populate({
+            path: 'authors',
+            populate: {
+                path: 'settings',
+                model: 'Settings'
+            }
         })
-
-        const updatedList = await List.findByIdAndUpdate(listId, {
-            placeIds
-        }, { new: true })
-        .populate('authors places subscribers')
+        .populate({
+            path: 'subscribers',
+            populate: {
+                path: 'settings',
+                model: 'Settings'
+            }
+        })
         if (!updatedList) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
             })
         }
 
+        const place = await Place.findById(placeId)
+
         let authorIds = []
 
         if (updatedList.authors) {
             authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id)
 
-            let deviceTokens = updatedList.authors.filter(author => author._id.toString() !== actor._id.toString() && _.get(author, 'settings.deviceToken') && _.get(author, 'settings.receiveSubscriptionNotifications')).map(author => author.settings.deviceToken)
+            const targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
+            const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
             if (deviceTokens && deviceTokens.length) {
                 const notification = {
                     badge: 0,
-                    body: 'Check it out in Rexy!',
-                    collapseId: updatedList._id,
+                    body: `${actor.displayName} removed ${place.title ? place.title : 'a place'} from your shared list.`,
+                    // collapseId: updatedList._id,
                     payload: {
                         'category': 'kPlaceRemovedFromAuthoredList',
-                        'listId': updatedList._id
+                        'listId': updatedList._id,
+                        'placeId': placeId
                     },
-                    // titleLocArgs: ['title'],
-                    titleLocKey: `${actor.username} removed a place from your list "${updatedList.title}".`,
+                    threadId: updatedList._id,
+                    titleLocKey: updatedList.title,
                     topic: 'com.gdwsk.Rexy'
                 }
 
-                notificationPublisher('placeAddedToOwnList', { deviceTokens, notification })
+                notificationPublisher('kPlaceRemovedFromAuthoredList', { deviceTokens, notification, actor, list: updatedList, place, targets })
             }
         }
 
         if (updatedList.subscribers) {
-            const deviceTokens = updatedList.subscribers.filter(subscriber => !authorIds.includes(subscriber._id.toString) && subscriber._id.toString() !== actor._id.toString() && _.get(subscriber, 'settings.deviceToken') && _.get(subscriber, 'settings.receiveSubscriptionNotifications')).map(subscriber => subscriber.settings.deviceToken)
+            const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString) && user._id.toString() !== actor._id.toString())
+            const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
             if (deviceTokens && deviceTokens.length) {
                 const notification = {
                     badge: 0,
-                    body: 'Check it out in Rexy!',
-                    collapseId: updatedList._id,
+                    body: `${place.title ? place.title : 'A place'} was removed from your subscribed list.`,
+                    // collapseId: updatedList._id,
                     payload: {
                         'category': 'kPlaceRemovedFromSubscribedList',
-                        'listId': updatedList._id
+                        'listId': updatedList._id,
+                        'placeId': placeId
                     },
-                    // titleLocArgs: ['title'],
-                    titleLocKey: `A place was removed from ${updatedList.title}.`,
+                    threadId: updatedList._id,
+                    titleLocKey: updatedList.title,
                     topic: 'com.gdwsk.Rexy'
                 }
 
-                notificationPublisher('placeAddedToList', { deviceTokens, notification })
+                notificationPublisher('kPlaceRemovedFromSubscribedList', { deviceTokens, notification, list: updatedList, place, targets })
             }
         }
 
@@ -773,6 +898,7 @@ const removePlace = async (req, res) => {
 const addSubscriber = async (req, res) => {
     console.log('ListService.addSubscriber')
 
+    const actor = req.user
     const listId = req.params.id
     const { _id, id } = req.body
     const userId = _id || id
@@ -790,43 +916,52 @@ const addSubscriber = async (req, res) => {
     }
 
     try {
-        const list = await List.findById(listId)
-        .populate('authors places subscribers')
-        if (!list) {
-            return res.status(404).send({
-                message: `List not found with id ${listId}`
-            })
-        }
-
-        const user = await User.findById(userId)
-        if (!user) {
-            return res.status(404).send({
-                message: `User not found with id ${userId}`
-            })
-        }
-
-        if (list.subscriberIds.includes(userId) && user.subscribedListIds.includes(listId)) {
-            return res.send(list)
-        }
-
-        const subscriberIds = list.subscriberIds || []
-        subscriberIds.addToSet(userId)
-
-        const subscribedListIds = user.subscribedListIds || []
-        subscribedListIds.addToSet(listId)
-
-        await User.findByIdAndUpdate(userId, {
-            subscribedListIds
+        const updatedList = await List.findByIdAndUpdate(listId, { $addToSet: { subscriberIds: userId } }, { new: true })
+        .populate('places')
+        .populate({
+            path: 'authors',
+            populate: {
+                path: 'settings',
+                model: 'Settings'
+            }
         })
-        const updatedList = await List.findByIdAndUpdate(listId, {
-            subscriberIds
-        }, { new: true })
-        .populate('authors places subscribers')
+        .populate({
+            path: 'subscribers',
+            populate: {
+                path: 'settings',
+                model: 'Settings'
+            }
+        })
         if (!updatedList) {
             return res.status(404).send({
                 message: `List not found with id ${listId}`
             })
         }
+
+        const user = await User.findByIdAndUpdate(userId, { $addToSet: { subscribedListIds: listId} })
+
+        if (updatedList.authors) {
+            let deviceTokens = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString() && _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
+
+            if (deviceTokens && deviceTokens.length) {
+                const notification = {
+                    badge: 0,
+                    body: `${actor.displayName} subscribed to your list.`,
+                    // collapseId: updatedList._id,
+                    payload: {
+                        'actorId': actor._id,
+                        'category': 'kNewSubscriberOnAuthoredList',
+                        'listId': updatedList._id
+                    },
+                    threadId: updatedList._id,
+                    titleLocKey: updatedList.title,
+                    topic: 'com.gdwsk.Rexy'
+                }
+
+                notificationPublisher('kNewSubscriberOnAuthoredList', { deviceTokens, notification, actor, list: updatedList, targets: [user] })
+            }
+        }
+
         res.send(updatedList)
 
     } catch (err) {
@@ -859,39 +994,9 @@ const removeSubscriber = async (req, res) => {
     }
 
     try {
-        const list = await List.findById(listId)
-        .populate('authors places subscribers')
-        if (!list) {
-            return res.status(404).send({
-                message: `List not found with id ${listId}`
-            })
-        }
+        await User.updateOne({ _id: userId }, { $pull: { subscribedListIds: listId } })
 
-        const user = await User.findById(userId)
-        if (!user) {
-            return res.status(404).send({
-                message: `User not found with id ${userId}`
-            })
-        }
-
-        if (!list.subscriberIds.includes(userId) && !user.subscribedListIds.includes(listId)) {
-            return res.send(list)
-        }
-
-        const subscriberIds = list.subscriberIds.filter(function(id) {
-            return id != userId
-        })
-
-        const subscribedListIds = user.subscribedListIds.filter(function(id) {
-            return id != listId
-        })
-
-        await User.findByIdAndUpdate(userId, {
-            subscribedListIds
-        })
-        const updatedList = await List.findByIdAndUpdate(listId, {
-            subscriberIds
-        }, { new: true })
+        const updatedList = await List.findByIdAndUpdate(listId, { $pull: { subscriberIds: userId } }, { new: true })
         .populate('authors places subscribers')
         if (!updatedList) {
             return res.status(404).send({

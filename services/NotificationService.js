@@ -47,24 +47,273 @@ const provider = new apn.Provider(options)
 
 // notifications
 const createNotifications = async (message) => {
-    console.log('NotificationService send in-app notifications')
+    console.log('NotificationService.createNotifications')
+    const body = JSON.parse(message.content.toString())
 
-    // console.log(message)
+    const { actor, list, place, targets, user } = body.data
 
-    channel.ack(message)
+    // console.log('body', body)
+
+    let attributedDescription = { attributes: [], description: '' }
+    let description = ''
+
+    switch (body.notificationType) {
+        case 'kFollowedUserCreatedList':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: list._id,
+                        value: list.title,
+                        type: 'list'
+                    }
+                ],
+                description: `Check out ${list._id} in Rexy!`
+            }
+            description = `Check out ${list.title} in Rexy!`
+            break
+
+        case 'kAddedAsAuthor':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: actor._id,
+                        value: actor.displayName,
+                        type: 'user'
+                    }
+                ],
+                description: `Congrats! ${actor._id} added you as an author on their shared list.`
+            }
+            description = `Congrats! ${actor.displayName} added you as an author on their shared list.`
+            break
+
+        case 'kAuthorAddedToAuthoredList':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: actor._id,
+                        value: actor.displayName,
+                        type: 'user'
+                    },
+                    {
+                        key: user._id,
+                        value: user.displayName.length ? `${user.displayName} as an author` : 'a new author',
+                        type: 'user'
+                    }
+                ],
+                description: `${actor._id} added ${user._id} as an author on your shared list.`,
+            }
+            description = `${actor.displayName} added ${user.displayName} as an author on your shared list.`
+            break
+
+        case 'kAuthorAddedToSubscribedList':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: user._id,
+                        value: user.displayName,
+                        type: 'user'
+                    }
+                ],
+                description: `${user._id} was added as an author on your subscribed list.`
+            }
+            description = `${user.displayName} was added as an author on your subscribed list.`
+            break
+
+        case 'kRemovedAsAuthor':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: actor._id,
+                        value: actor.displayName,
+                        type: 'user'
+                    }
+                ],
+                description: `Aww... ${actor._id} removed you as an author from their list.`
+            }
+            description = `Aww... ${actor.displayName} removed you as an author from their list.`
+            break
+
+        case 'kAuthorRemovedFromAuthoredList':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: actor._id,
+                        value: actor.displayName,
+                        type: 'user'
+                    },
+                    {
+                        key: user._id,
+                        value: user.displayName,
+                        type: 'user'
+                    }
+                ],
+                description: `${actor._id} removed ${user._id} as an author from your shared list.`
+            }
+            description = `${actor.displayName} removed ${user.displayName} as an author from your shared list.`
+            break
+
+        case 'kAuthorRemovedFromSubscribedList':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: user._id,
+                        value: user.displayName,
+                        type: 'user'
+                    }
+                ],
+                description: `${user._id} was removed an an author from your subscribed list.`
+            }
+            description = `${user.displayName} was removed an an author from your subscribed list.`
+            break
+
+        case 'kPlaceAddedToAuthoredList':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: actor._id,
+                        value: actor.displayName,
+                        type: 'user'
+                    },
+                    {
+                        key: place._id,
+                        value: place.title,
+                        type: 'place'
+                    }
+                ],
+                description: `${actor._id} added ${place._id} to your shared list.`
+            }
+            description = `${actor.displayName} added ${place.title} to your shared list.`
+            break
+
+        case 'kPlaceAddedToSubscribedList':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: place._id,
+                        value: place.title,
+                        type: 'place'
+                    }
+                ],
+                description: `${place._id} was added to your subscribed list.`
+            }
+            description = `${place.title} was added to your subscribed list.`
+            break
+
+        case 'kPlaceRemovedFromAuthoredList':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: actor._id,
+                        value: actor.displayName,
+                        type: 'user'
+                    },
+                    {
+                        key: place._id,
+                        value: place.title,
+                        type: 'place'
+                    }
+                ],
+                description: `${actor._id} removed ${place._id} from your shared list.`
+            }
+            description = `${actor.displayName} removed ${place.title} from your shared list.`
+            break
+
+        case 'kPlaceRemovedFromSubscribedList':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: place._id,
+                        value: place.title,
+                        type: 'place'
+                    }
+                ],
+                description: `${place._id} was removed from your subscribed list.`
+            }
+            description = `${place.title} was removed from your subscribed list.`
+            break
+
+        case 'kListShared':
+            return
+
+        case 'kPlaceShared':
+            return
+
+        case 'kUserShared':
+            return
+
+        case 'kCommentAddedToPlaceOnAuthoredList':
+            return
+
+        case 'kCommentRemovedFromPlaceOnAuthoredList':
+            return
+
+        case 'kNewSubscriberOnAuthoredList':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: actor._id,
+                        value: actor.displayName,
+                        type: 'user'
+                    }
+                ],
+                description: `${actor._id} subscribed to your list.`
+            }
+            description = `${actor.displayName} subscribed to your list.`
+            break
+
+        case 'kNewFollower':
+            attributedDescription = {
+                attributes: [
+                    {
+                        key: actor._id,
+                        value: actor.displayName,
+                        type: 'user'
+                    }
+                ],
+                description: `${actor._id} started following you.`
+            }
+            description = `${actor.displayName} started following you.`
+            break
+    }
+
+    let notificationArray = []
+    targets.forEach(function(target) {
+        const notification = new Notification({
+            actorId: _.get(body, 'data.actor._id'),
+            attributedDescription,
+            description,
+            object: {
+                listId: _.get(body, 'data.list._id'),
+                placeId: _.get(body, 'data.place._id'),
+                userId: _.get(body, 'data.user._id')
+            },
+            targetId: _.get(target, '_id'),
+            type: body.notificationType
+        })
+        notificationArray.push(notification)
+
+        console.log('notification', JSON.stringify(notification))        
+    })
+
+    try {
+        await Notification.insertMany(notificationArray)
+        channel.ack(message)
+
+    } catch (err) {
+        console.error('NotificationService.createNotifications err', err)
+    }
 }
 
 const sendPushNotifications = async (message) => {
-    console.log('NotificationService send push notifications')
+    console.log('NotificationService.sendPushNotifications')
     const body = JSON.parse(message.content.toString())
-    // console.log(body)
 
     const notification = new apn.Notification({
         badge: body.data.notification.badge,
         body: body.data.notification.body,
         collapseId: body.data.notification.collapseId,
         payload: body.data.notification.payload,
-        titleLocArgs: body.data.notification.titleLocArgs,
+        threadId: body.data.notification.threadId,
         titleLocKey: body.data.notification.titleLocKey,
         topic: body.data.notification.topic
     })

@@ -26,6 +26,21 @@ const validateToken = async (req, res, next) => {
 
         // const data = await verifyPromised(token, getKey)
         const user = await User.findOne({ xid: sub })
+        .populate('bookmarkedPlaces following lists settings subscribedLists visitedPlaces')
+        .populate({
+            path: 'followers',
+            populate: {
+                path: 'settings',
+                model: 'Settings'
+            }
+        })
+        // .populate({
+        //     path: 'subscribedLists',
+        //     populate: {
+        //         path: 'places',
+        //         model: 'Place'
+        //     }
+        // })
         if (!user) {
             throw new Error()
         }

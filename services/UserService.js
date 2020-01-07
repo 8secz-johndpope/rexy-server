@@ -15,6 +15,69 @@ const querystring = require('querystring')
 const url = require('url')
 const _ = require('lodash')
 
+
+// message queue
+const amqp = require('amqplib')
+
+var channel = null
+const notificationExchange = 'notificationExchange'
+const createExchange = 'createExchange'
+const updateExchange = 'updateExchange'
+const deleteExchange = 'deleteExchange'
+
+const start = async () => {
+    try {
+        const connection = await amqp.connect(process.env.CLOUDAMQP_URL)
+        const channel = await connection.createChannel()
+        await channel.assertExchange(notificationExchange, 'fanout', { durable: true })
+
+        return channel
+
+    } catch (err) {
+        console.error('[AMQP] start err', err)
+    }
+}
+start().then(async chan => {
+    channel = chan
+
+    const q = await channel.assertQueue('', { exclusive: true })
+    channel.bindQueue(q.queue, createExchange, '')
+    channel.consume(q.queue, createObject)
+    
+    const q2 = await channel.assertQueue('', { exclusive: true })
+    channel.bindQueue(q2.queue, updateExchange, '')
+    channel.consume(q2.queue, updateObject)
+
+    const q3 = await channel.assertQueue('', { exclusive: true })
+    channel.bindQueue(q3.queue, deleteExchange, '')
+    channel.consume(q3.queue, deleteObject)
+})
+
+const createObject = async (message) => {
+    const body = JSON.parse(message.content.toString())
+
+    console.log('UserService.createObject in', body.collection)
+}
+
+const updateObject = async (message) => {
+    const body = JSON.parse(message.content.toString())
+
+    console.log('UserService.updateObject in', body.collection)
+}
+
+const deleteObject = async (message) => {
+    const body = JSON.parse(message.content.toString())
+
+    console.log('UserService.deleteObject in', body.collection)
+}
+
+function notificationPublisher(notificationType, data) {
+    const message = { notificationType, data }
+    channel.publish(notificationExchange, '', Buffer.from(JSON.stringify(message)))
+}
+
+
+// auth
 const jwksClient = require('jwks-rsa')
 const client = jwksClient({ jwksUri: process.env.APPLE_PUBLIC_KEY_URL })
 
@@ -35,8 +98,8 @@ const authenticate = async (req, res) => {
 
     const { authorizationCode, identityToken } = req.body
 
-    console.log('authorizationCode', authorizationCode)
-    console.log('identityToken', identityToken)
+    // console.log('authorizationCode', authorizationCode)
+    // console.log('identityToken', identityToken)
 
     if (!identityToken) {
         return res.status(400).send({
@@ -437,6 +500,218 @@ const removeImage = async (req, res) => {
 }
 
 
+// get followers
+const getFollowers = async (req, res) => {
+    console.log('UserService.getFollowers')
+
+    const userId = req.params.id
+
+    if (!userId) {
+        return res.status(400).send({
+            message: 'No User id provided to get followers from.'
+        })
+    }
+
+    try {
+        const user = await User.findById(userId)
+        .populate('followers')
+        if (!user) {
+            return res.status(404).send({
+                message: `User not found with id ${userId}`
+            })
+        }
+
+        res.send(user.followers || [])
+
+    } catch (err) {
+        console.log('UserService.getFollowers err', userId, err)
+
+        if (err.kind === 'ObjectId') {
+            return res.status(404).send({
+                message: `User not found with id ${userId}`
+            })
+        }
+
+        return res.status(500).send({
+            message: `An error occurred while getting followers from User with id ${userId}`
+        })
+    }
+}
+
+
+// add follower
+const addFollowing = async (req, res) => {
+    console.log('UserService.addFollowing')
+
+    const actor = req.user
+    const followerUserId = req.params.id
+    const { _id, id } = req.body
+    const userId = _id || id
+
+    if (!followerUserId) {
+        return res.status(400).send({
+            message: 'No User id provided to add following to.'
+        })
+    }
+
+    if (!userId) {
+        return res.status(400).send({
+            message: 'Followed User does not have an id.'
+        })
+    }
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate(followerUserId, { $addToSet: { followingIds: userId } }, { new: true })
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
+        .populate({
+            path: 'lists',
+            populate: {
+                path: 'places',
+                model: 'Place'
+            }
+        })
+        .populate({
+            path: 'subscribedLists',
+            populate: {
+                path: 'places',
+                model: 'Place'
+            }
+        })
+        if (!updatedUser) {
+            return res.status(404).send({
+                message: `User not found with id ${followerUserId}`
+            })
+        }
+
+        const followedUser = await User.findByIdAndUpdate(userId, { $addToSet: { followerIds: followerUserId } })
+        .populate('settings')
+
+        if (followedUser.settings && _.get(followedUser, 'settings.deviceToken') && _.get(followedUser, 'settings.receiveSubscriptionNotifications')) {
+            const notification = {
+                badge: 0,
+                body: `${actor.displayName} started following you.`,
+                // collapseId: updatedList._id,
+                payload: {
+                    'actorId': actor._id,
+                    'category': 'kNewFollower'
+                },
+                threadId: followedUser._id,
+                // titleLocKey: updatedList.title,
+                topic: 'com.gdwsk.Rexy'
+            }
+
+            notificationPublisher('kNewFollower', { deviceTokens: [followedUser.settings.deviceToken], notification, actor, targets: [followedUser] })
+        }
+
+        res.send(updatedUser)
+
+    } catch (err) {
+        console.log('UserService.addFollowing err', followerUserId, userId, err)
+    }
+}
+
+
+// get following
+const getFollowing = async (req, res) => {
+    console.log('UserService.getFollowing')
+
+    const userId = req.params.id
+
+    if (!userId) {
+        return res.status(400).send({
+            message: 'No User id provided to get following from.'
+        })
+    }
+
+    try {
+        const user = await User.findById(userId)
+        .populate('following')
+        if (!user) {
+            return res.status(404).send({
+                message: `User not found with id ${userId}`
+            })
+        }
+
+        res.send(user.following || [])
+
+    } catch (err) {
+        console.log('UserService.getFollowing err', userId, err)
+
+        if (err.kind === 'ObjectId') {
+            return res.status(404).send({
+                message: `User not found with id ${userId}`
+            })
+        }
+
+        return res.status(500).send({
+            message: `An error occurred while getting following from User with id ${userId}`
+        })
+    }
+}
+
+
+// remove following
+const removeFollowing = async (req, res) => {
+    console.log('UserService.removeFollowing')
+
+    const followerUserId = req.params.id
+    const userId = req.params.userId
+
+    if (!followerUserId) {
+        return res.status(400).send({
+            message: 'No User id provided to remove following from.'
+        })
+    }
+
+    if (!userId) {
+        return res.status(400).send({
+            message: 'User to remove from follower from does not have an id.'
+        })
+    }
+
+    try {
+        await User.updateOne({ _id: userId }, { $pull: { followerIds: followerUserId } })
+
+        const updatedUser = await User.findByIdAndUpdate(followerUserId, { $pull: { followingIds: userId } }, { new: true })
+        .populate('bookmarkedPlaces followers following settings visitedPlaces')
+        .populate({
+            path: 'lists',
+            populate: {
+                path: 'places',
+                model: 'Place'
+            }
+        })
+        .populate({
+            path: 'subscribedLists',
+            populate: {
+                path: 'places',
+                model: 'Place'
+            }
+        })
+        if (!updatedUser) {
+            return res.status(404).send({
+                message: `User not found with id ${followerUserId}`
+            })
+        }
+
+        res.send(updatedUser)
+        
+    } catch (err) {
+        console.log('UserService.removeFollowing err', followerUserId, userId, err)
+
+        if (err.kind === 'ObjectId') {
+            return res.status(404).send({
+                message: `User not found with id ${userId}`
+            })
+        }
+
+        return res.status(500).send({
+            message: `An error occurred while removing a following User (${followerUserId}) from User (${userId})`
+        })
+    }
+}
+
+
 // user lists
 const getLists = async (req, res) => {
     console.log('UserService.getLists')
@@ -542,38 +817,7 @@ const addBookmark = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId)
-        .populate('bookmarkedPlaces followers following settings visitedPlaces')
-        .populate({
-            path: 'lists',
-            populate: {
-                path: 'places',
-                model: 'Place'
-            }
-        })
-        .populate({
-            path: 'subscribedLists',
-            populate: {
-                path: 'places',
-                model: 'Place'
-            }
-        })
-    if (!user) {
-            return res.status(404).send({
-                message: `User not found with id ${userId}`
-            })
-        }
-
-        if (user.bookmarkedPlaceIds.includes(placeId)) {
-            return res.send(user)
-        }
-
-        const placeIds = user.bookmarkedPlaceIds || []
-        placeIds.addToSet(placeId)
-
-        const updatedUser = await User.findByIdAndUpdate(userId, {
-            bookmarkedPlaceIds: placeIds
-        }, { new: true })
+        const updatedUser = await User.findByIdAndUpdate(userId, { $addToSet: { bookmarkedPlaceIds: placeId } }, { new: true })
         .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
@@ -671,39 +915,7 @@ const removeBookmark = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId)
-        .populate('bookmarkedPlaces followers following settings visitedPlaces')
-        .populate({
-            path: 'lists',
-            populate: {
-                path: 'places',
-                model: 'Place'
-            }
-        })
-        .populate({
-            path: 'subscribedLists',
-            populate: {
-                path: 'places',
-                model: 'Place'
-            }
-        })
-        if (!user) {
-            return res.status(404).send({
-                message: `User not found with id ${userId}`
-            })
-        }
-
-        if (!user.bookmarkedPlaceIds.includes(placeId)) {
-            return res.send(user)
-        }
-        
-        const bookmarkedPlaceIds = user.bookmarkedPlaceIds.filter(function(item) {
-            return item != placeId
-        }) || []
-
-        const updatedUser = await User.findByIdAndUpdate(userId, {
-            bookmarkedPlaceIds
-        }, { new: true })
+        const updatedUser = await User.findByIdAndUpdate(userId, { $pull: { bookmarkedPlaceIds: placeId } }, { new: true })
         .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
@@ -763,38 +975,7 @@ const addVisited = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId)
-        .populate('bookmarkedPlaces followers following settings visitedPlaces')
-        .populate({
-            path: 'lists',
-            populate: {
-                path: 'places',
-                model: 'Place'
-            }
-        })
-        .populate({
-            path: 'subscribedLists',
-            populate: {
-                path: 'places',
-                model: 'Place'
-            }
-        })
-        if (!user) {
-            return res.status(404).send({
-                message: `User not found with id ${userId}`
-            })
-        }
-
-        if (user.visitedPlaceIds.includes(placeId)) {
-            return res.send(user)
-        }
-
-        const placeIds = user.visitedPlaceIds || []
-        placeIds.addToSet(placeId)
-
-        const updatedUser = await User.findByIdAndUpdate(userId, {
-            visitedPlaceIds: placeIds
-        }, { new: true })
+        const updatedUser = await User.findByIdAndUpdate(userId, { $addToSet: { visitedPlaceIds: placeId } }, { new: true })
         .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
@@ -891,39 +1072,7 @@ const removeVisited = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId)
-        .populate('bookmarkedPlaces followers following settings visitedPlaces')
-        .populate({
-            path: 'lists',
-            populate: {
-                path: 'places',
-                model: 'Place'
-            }
-        })
-        .populate({
-            path: 'subscribedLists',
-            populate: {
-                path: 'places',
-                model: 'Place'
-            }
-        })
-        if (!user) {
-            return res.status(404).send({
-                message: `User not found with id ${userId}`
-            })
-        }
-
-        if (!user.visitedPlaceIds.includes(placeId)) {
-            return res.send(user)
-        }
-
-        const placeIds = user.visitedPlaceIds.filter(function(item) {
-            return item != placeId
-        })
-
-        const updatedUser = await User.findByIdAndUpdate(userId, {
-            visitedPlaceIds: placeIds
-        }, { new: true })
+        const updatedUser = await User.findByIdAndUpdate(userId, { $pull: { visitedPlaceIds: placeId } }, { new: true })
         .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
@@ -975,70 +1124,68 @@ const register = async (req, res) => {
     }
 
     try {
-        const user = await User.findById(userId)
-        .populate('bookmarkedPlaces followers following settings visitedPlaces')
-        .populate({
-            path: 'lists',
-            populate: {
-                path: 'places',
-                model: 'Place'
-            }
-        })
-        .populate({
-            path: 'subscribedLists',
-            populate: {
-                path: 'places',
-                model: 'Place'
-            }
-        })
-        if (!user) {
-            return res.status(404).send({
-                message: `User not found with id ${userId}`
-            })
-        }
-        if (user.settings && user.settings.deviceToken && user.settings.deviceToken === deviceToken) {
-            return res.send(user)
-        }
+        // const user = await User.findById(userId)
+        // .populate('bookmarkedPlaces followers following settings visitedPlaces')
+        // .populate({
+        //     path: 'lists',
+        //     populate: {
+        //         path: 'places',
+        //         model: 'Place'
+        //     }
+        // })
+        // .populate({
+        //     path: 'subscribedLists',
+        //     populate: {
+        //         path: 'places',
+        //         model: 'Place'
+        //     }
+        // })
+        // if (!user) {
+        //     return res.status(404).send({
+        //         message: `User not found with id ${userId}`
+        //     })
+        // }
+        // if (user.settings && user.settings.deviceToken && user.settings.deviceToken === deviceToken) {
+        //     return res.send(user)
+        // }
 
-        if (user.settings.deviceToken) {
-            console.log('update existing notification settings')
-            const updatedSettings = await Settings.findByIdAndUpdate(user.settingsId, { deviceToken })
-            if (!updatedSettings) {
-                return res.status(404).send({
-                    message: `User not found with id ${userId}`
-                })
-            }
-            const updatedUser = await User.findById(userId)
-            .populate('bookmarkedPlaces followers following settings visitedPlaces')
-            .populate({
-                path: 'lists',
-                populate: {
-                    path: 'places',
-                    model: 'Place'
-                }
-            })
-            .populate({
-                path: 'subscribedLists',
-                populate: {
-                    path: 'places',
-                    model: 'Place'
-                }
-            })
-            if (!user) {
-                return res.status(404).send({
-                    message: `User not found with id ${userId}`
-                })
-            }
-            return res.send(updatedUser)
-        }
+        // if (user.settings && user.settings.deviceToken) {
+        //     console.log('update existing notification settings')
+        //     const updatedSettings = await Settings.findByIdAndUpdate(user.settingsId, { deviceToken })
+        //     if (!updatedSettings) {
+        //         return res.status(404).send({
+        //             message: `User not found with id ${userId}`
+        //         })
+        //     }
+        //     const updatedUser = await User.findById(userId)
+        //     .populate('bookmarkedPlaces followers following settings visitedPlaces')
+        //     .populate({
+        //         path: 'lists',
+        //         populate: {
+        //             path: 'places',
+        //             model: 'Place'
+        //         }
+        //     })
+        //     .populate({
+        //         path: 'subscribedLists',
+        //         populate: {
+        //             path: 'places',
+        //             model: 'Place'
+        //         }
+        //     })
+        //     if (!user) {
+        //         return res.status(404).send({
+        //             message: `User not found with id ${userId}`
+        //         })
+        //     }
+        //     return res.send(updatedUser)
+        // }
 
         const settings = new Settings({ deviceToken, userId })
         const savedSettings = await settings.save()
         const settingsId = savedSettings._id
         
-        const updatedUser = await User.findByIdAndUpdate(userId, {
-            settingsId
-        }, { new: true })
+        const updatedUser = await User.findByIdAndUpdate(userId, { settingsId }, { new: true })
         .populate('bookmarkedPlaces followers following settings visitedPlaces')
         .populate({
             path: 'lists',
@@ -1081,4 +1228,4 @@ const register = async (req, res) => {
     }
 }
 
-module.exports = { authenticate, create, get, getById, update, remove, uploadImage, removeImage, getLists, getSubscriptions, addBookmark, getBookmarks, removeBookmark, addVisited, getVisited, removeVisited, register }
+module.exports = { authenticate, create, get, getById, update, remove, uploadImage, removeImage, getFollowers, addFollowing, getFollowing, removeFollowing, getLists, getSubscriptions, addBookmark, getBookmarks, removeBookmark, addVisited, getVisited, removeVisited, register }

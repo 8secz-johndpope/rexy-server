@@ -237,9 +237,9 @@ const search = async (req, res) => {
     let [rexyResults, yelpResults, googlePlaceResults] = await Promise.all([getRexyResults(text, latitude, longitude, location, radius, filters), getYelpResults(text, latitude, longitude, location, radius), getGooglePlacesResults(text, latitude, longitude, location, radius)])
 
     const response = {}
-    response.rexy = rexyResults.filter(function (place) { return place != null })
-    response.yelp = yelpResults.filter(function (place) { return place != null })
-    response.googlePlaces = googlePlaceResults.filter(function (place) { return place != null })
+    response.rexy = rexyResults.filter(place => place != null)
+    response.yelp = yelpResults.filter(place => place != null)
+    response.googlePlaces = googlePlaceResults.filter(place => place != null)
 
     res.send(response)
 }
