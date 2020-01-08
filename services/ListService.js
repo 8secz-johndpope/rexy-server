@@ -480,7 +480,7 @@ const addAuthor = async (req, res) => {
                     topic: 'com.gdwsk.Rexy'
                 }
 
-                notificationPublisher('kAuthorAddedToAuthoredList', { deviceTokens, notification, actor, list: updatedList, targets, user })
+                notificationPublisher('kAuthorAddedToAuthoredList', { deviceTokens, notification, actor, list: updatedList, user, targets })
             }
         }
 
@@ -503,7 +503,7 @@ const addAuthor = async (req, res) => {
                     topic: 'com.gdwsk.Rexy'
                 }
 
-                notificationPublisher('kAuthorAddedToSubscribedList', { deviceTokens, notification, list: updatedList, targets, user })
+                notificationPublisher('kAuthorAddedToSubscribedList', { deviceTokens, notification, list: updatedList, user, targets })
             }
         }
 

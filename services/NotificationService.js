@@ -79,11 +79,16 @@ const createNotifications = async (message) => {
                         key: actor._id,
                         value: actor.displayName,
                         type: 'user'
+                    },
+                    {
+                        key: list._id,
+                        value: list.title,
+                        type: 'list'
                     }
                 ],
-                description: `Congrats! ${actor._id} added you as an author on their shared list.`
+                description: `Congrats! ${actor._id} added you as an author on their shared list, ${list._id}.`
             }
-            description = `Congrats! ${actor.displayName} added you as an author on their shared list.`
+            description = `Congrats! ${actor.displayName} added you as an author on their shared list, ${list.title}.`
             break
 
         case 'kAuthorAddedToAuthoredList':
@@ -96,13 +101,18 @@ const createNotifications = async (message) => {
                     },
                     {
                         key: user._id,
-                        value: user.displayName.length ? `${user.displayName} as an author` : 'a new author',
+                        value: user.displayName,
                         type: 'user'
+                    },
+                    {
+                        key: list._id,
+                        value: list.title,
+                        type: 'list'
                     }
                 ],
-                description: `${actor._id} added ${user._id} as an author on your shared list.`,
+                description: `${actor._id} added ${user._id} as an author on your shared list, ${list._id}.`,
             }
-            description = `${actor.displayName} added ${user.displayName} as an author on your shared list.`
+            description = `${actor.displayName} added ${user.displayName} as an author on your shared list, ${list.title}.`
             break
 
         case 'kAuthorAddedToSubscribedList':
@@ -112,11 +122,16 @@ const createNotifications = async (message) => {
                         key: user._id,
                         value: user.displayName,
                         type: 'user'
+                    },
+                    {
+                        key: list._id,
+                        value: list.title,
+                        type: 'list'
                     }
                 ],
-                description: `${user._id} was added as an author on your subscribed list.`
+                description: `${user._id} was added as an author on your subscribed list, ${list._id}.`
             }
-            description = `${user.displayName} was added as an author on your subscribed list.`
+            description = `${user.displayName} was added as an author on your subscribed list, ${list.title}.`
             break
 
         case 'kRemovedAsAuthor':
@@ -126,11 +141,16 @@ const createNotifications = async (message) => {
                         key: actor._id,
                         value: actor.displayName,
                         type: 'user'
+                    },
+                    {
+                        key: list._id,
+                        value: list.title,
+                        type: 'list'
                     }
                 ],
-                description: `Aww... ${actor._id} removed you as an author from their list.`
+                description: `Aww... ${actor._id} removed you as an author from their list, ${list._id}.`
             }
-            description = `Aww... ${actor.displayName} removed you as an author from their list.`
+            description = `Aww... ${actor.displayName} removed you as an author from their list, ${list.title}.`
             break
 
         case 'kAuthorRemovedFromAuthoredList':
@@ -145,11 +165,16 @@ const createNotifications = async (message) => {
                         key: user._id,
                         value: user.displayName,
                         type: 'user'
+                    },
+                    {
+                        key: list._id,
+                        value: list.title,
+                        type: 'list'
                     }
                 ],
-                description: `${actor._id} removed ${user._id} as an author from your shared list.`
+                description: `${actor._id} removed ${user._id} as an author from your shared list, ${list._id}.`
             }
-            description = `${actor.displayName} removed ${user.displayName} as an author from your shared list.`
+            description = `${actor.displayName} removed ${user.displayName} as an author from your shared list, ${list.title}.`
             break
 
         case 'kAuthorRemovedFromSubscribedList':
@@ -159,11 +184,16 @@ const createNotifications = async (message) => {
                         key: user._id,
                         value: user.displayName,
                         type: 'user'
+                    },
+                    {
+                        key: list._id,
+                        value: list.title,
+                        type: 'list'
                     }
                 ],
-                description: `${user._id} was removed an an author from your subscribed list.`
+                description: `${user._id} was removed an an author from your subscribed list, ${list._id}.`
             }
-            description = `${user.displayName} was removed an an author from your subscribed list.`
+            description = `${user.displayName} was removed an an author from your subscribed list, ${list.title}.`
             break
 
         case 'kPlaceAddedToAuthoredList':
@@ -178,11 +208,16 @@ const createNotifications = async (message) => {
                         key: place._id,
                         value: place.title,
                         type: 'place'
+                    },
+                    {
+                        key: list._id,
+                        value: list.title,
+                        type: 'list'
                     }
                 ],
-                description: `${actor._id} added ${place._id} to your shared list.`
+                description: `${actor._id} added ${place._id} to your shared list, ${list._id}.`
             }
-            description = `${actor.displayName} added ${place.title} to your shared list.`
+            description = `${actor.displayName} added ${place.title} to your shared list, ${list.title}.`
             break
 
         case 'kPlaceAddedToSubscribedList':
@@ -192,11 +227,16 @@ const createNotifications = async (message) => {
                         key: place._id,
                         value: place.title,
                         type: 'place'
+                    },
+                    {
+                        key: list._id,
+                        value: list.title,
+                        type: 'list'
                     }
                 ],
-                description: `${place._id} was added to your subscribed list.`
+                description: `${place._id} was added to your subscribed list, ${list._id}.`
             }
-            description = `${place.title} was added to your subscribed list.`
+            description = `${place.title} was added to your subscribed list, ${list.title}.`
             break
 
         case 'kPlaceRemovedFromAuthoredList':
@@ -211,11 +251,16 @@ const createNotifications = async (message) => {
                         key: place._id,
                         value: place.title,
                         type: 'place'
+                    },
+                    {
+                        key: list._id,
+                        value: list.title,
+                        type: 'list'
                     }
                 ],
-                description: `${actor._id} removed ${place._id} from your shared list.`
+                description: `${actor._id} removed ${place._id} from your shared list, ${list._id}.`
             }
-            description = `${actor.displayName} removed ${place.title} from your shared list.`
+            description = `${actor.displayName} removed ${place.title} from your shared list, ${list.title}.`
             break
 
         case 'kPlaceRemovedFromSubscribedList':
@@ -225,11 +270,16 @@ const createNotifications = async (message) => {
                         key: place._id,
                         value: place.title,
                         type: 'place'
+                    },
+                    {
+                        key: list._id,
+                        value: list.title,
+                        type: 'list'
                     }
                 ],
-                description: `${place._id} was removed from your subscribed list.`
+                description: `${place._id} was removed from your subscribed list, ${list._id}.`
             }
-            description = `${place.title} was removed from your subscribed list.`
+            description = `${place.title} was removed from your subscribed list, ${list.title}.`
             break
 
         case 'kListShared':
@@ -254,11 +304,16 @@ const createNotifications = async (message) => {
                         key: actor._id,
                         value: actor.displayName,
                         type: 'user'
+                    },
+                    {
+                        key: list._id,
+                        value: list.title,
+                        type: 'list'
                     }
                 ],
-                description: `${actor._id} subscribed to your list.`
+                description: `${actor._id} subscribed to your list, ${list._id}.`
             }
-            description = `${actor.displayName} subscribed to your list.`
+            description = `${actor.displayName} subscribed to your list, ${list.title}.`
             break
 
         case 'kNewFollower':
