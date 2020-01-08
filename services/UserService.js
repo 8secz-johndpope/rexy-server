@@ -600,7 +600,7 @@ const addFollowing = async (req, res) => {
                 topic: 'com.gdwsk.Rexy'
             }
 
-            notificationPublisher('kNewFollower', { deviceTokens: [followedUser.settings.deviceToken], notification, actor, targets: [followedUser] })
+            notificationPublisher('kNewFollower', { deviceTokens: [followedUser.settings.deviceToken], notification, actor, user: updatedUser, targets: [followedUser] })
         }
 
         res.send(updatedUser)
