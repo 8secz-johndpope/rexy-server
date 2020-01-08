@@ -589,17 +589,17 @@ const addFollowing = async (req, res) => {
         if (followedUser.settings && _.get(followedUser, 'settings.deviceToken') && _.get(followedUser, 'settings.receiveSubscriptionNotifications')) {
             const notification = {
                 badge: 0,
-                body: `${actor.displayName} started following you.`,
+                body: `${updatedUser.displayName} started following you.`,
                 // collapseId: updatedList._id,
                 payload: {
-                    'actorId': actor._id,
+                    'actorId': updatedUser._id,
                     'category': 'kNewFollower'
                 },
                 threadId: followedUser._id,
                 // titleLocKey: updatedList.title,
                 topic: 'com.gdwsk.Rexy'
             }
-
+            
             notificationPublisher('kNewFollower', { deviceTokens: [followedUser.settings.deviceToken], notification, actor, user: updatedUser, targets: [followedUser] })
         }
 

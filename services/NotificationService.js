@@ -529,7 +529,7 @@ const get = async (req, res) => {
     const { targetId } = q
 
     try {
-        const notifications = await Notification.find({ targetId })
+        const notifications = await Notification.find({ targetId }).sort({ createdAt: -1 })
         .populate('actor object.list object.place object.user target')
         res.send(notifications || [])
     
