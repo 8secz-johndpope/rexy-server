@@ -94,23 +94,21 @@ const create = async (req, res) => {
             const targets = actor.followers.filter(user => user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
-            if (deviceTokens && deviceTokens.length) {
-                const notification = {
-                    badge: 0,
-                    body: `Check out ${list.title} in Rexy!`,
-                    // collapseId: list._id,
-                    payload: {
-                        'actorId': actor._id,
-                        'category': 'kFollowedUserCreatedList',
-                        'listId': list._id
-                    },
-                    threadId: actor._id,
-                    titleLocKey: `${actor.displayName.length ? actor.displayName : 'A user you follow'} created a list`,
-                    topic: 'com.gdwsk.Rexy'
-                }
-
-                notificationPublisher('kFollowedUserCreatedList', { deviceTokens, notification, actor, list, targets })
+            const notification = {
+                badge: 0,
+                body: `Check out ${list.title} in Rexy!`,
+                // collapseId: list._id,
+                payload: {
+                    'actorId': actor._id,
+                    'category': 'kFollowedUserCreatedList',
+                    'listId': list._id
+                },
+                threadId: actor._id,
+                titleLocKey: `${actor.displayName.length ? actor.displayName : 'A user you follow'} created a list`,
+                topic: 'com.gdwsk.Rexy'
             }
+
+            notificationPublisher('kFollowedUserCreatedList', { deviceTokens, notification, actor, list, targets })
         }
 
         res.send(savedList)
@@ -439,23 +437,24 @@ const addAuthor = async (req, res) => {
         const user = await User.findByIdAndUpdate({ _id: userId }, { $addToSet: { listIds: listId } }, { new: true })
         .populate('settings')
 
-        if (user.settings && _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')) {
-            const notification = {
-                badge: 0,
-                body: `Congrats! ${actor.displayName} added you as an author on their shared list.`,
-                // collapseId: updatedList._id,
-                payload: {
-                    'actorId': actor._id,
-                    'category': 'kAddedAsAuthor',
-                    'listId': updatedList._id
-                },
-                threadId: updatedList._id,
-                titleLocKey: updatedList.title,
-                topic: 'com.gdwsk.Rexy'
-            }
-
-            notificationPublisher('kAddedAsAuthor', { deviceTokens: [user.settings.deviceToken], notification, actor, list: updatedList, targets: [user] })
+        const userTargets = [user].filter(user => user._id.toString() !== actor._id.toString())
+        const userDeviceTokens = userTargets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
+        
+        const notification = {
+            badge: 0,
+            body: `Congrats! ${actor.displayName} added you as an author on their shared list.`,
+            // collapseId: updatedList._id,
+            payload: {
+                'actorId': actor._id,
+                'category': 'kAddedAsAuthor',
+                'listId': updatedList._id
+            },
+            threadId: updatedList._id,
+            titleLocKey: updatedList.title,
+            topic: 'com.gdwsk.Rexy'
         }
+
+        notificationPublisher('kAddedAsAuthor', { deviceTokens: userDeviceTokens, notification, actor, list: updatedList, targets: userTargets })
 
         let authorIds = []
 
@@ -465,46 +464,42 @@ const addAuthor = async (req, res) => {
             const targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
-            if (deviceTokens && deviceTokens.length) {
-                const notification = {
-                    badge: 0,
-                    body: `${actor.displayName} added ${user.displayName.length ? `${user.displayName} as an author` : 'a new author'} on your shared list.`,
-                    // collapseId: updatedList._id,
-                    payload: {
-                        'actorId': actor._id,
-                        'category': 'kAuthorAddedToAuthoredList',
-                        'listId': updatedList._id
-                    },
-                    threadId: updatedList._id,
-                    titleLocKey: updatedList.title,
-                    topic: 'com.gdwsk.Rexy'
-                }
-
-                notificationPublisher('kAuthorAddedToAuthoredList', { deviceTokens, notification, actor, list: updatedList, user, targets })
+            const notification = {
+                badge: 0,
+                body: `${actor.displayName} added ${user.displayName.length ? `${user.displayName} as an author` : 'a new author'} on your shared list.`,
+                // collapseId: updatedList._id,
+                payload: {
+                    'actorId': actor._id,
+                    'category': 'kAuthorAddedToAuthoredList',
+                    'listId': updatedList._id
+                },
+                threadId: updatedList._id,
+                titleLocKey: updatedList.title,
+                topic: 'com.gdwsk.Rexy'
             }
+
+            notificationPublisher('kAuthorAddedToAuthoredList', { deviceTokens, notification, actor, list: updatedList, user, targets })
         }
 
         if (updatedList.subscribers) {
             const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString) && user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
-            if (deviceTokens && deviceTokens.length) {
-                const notification = {
-                    badge: 0,
-                    body: `${user.displayName.length ? `${user.displayName} was added as an author` : 'A new author was added'} on your subscribed list.`,
-                    // collapseId: updatedList._id,
-                    payload: {
-                        'actorId': actor._id,
-                        'category': 'kAuthorAddedToSubscribedList',
-                        'listId': updatedList._id
-                    },
-                    threadId: updatedList._id,
-                    titleLocKey: updatedList.title,
-                    topic: 'com.gdwsk.Rexy'
-                }
-
-                notificationPublisher('kAuthorAddedToSubscribedList', { deviceTokens, notification, list: updatedList, user, targets })
+            const notification = {
+                badge: 0,
+                body: `${user.displayName.length ? `${user.displayName} was added as an author` : 'A new author was added'} on your subscribed list.`,
+                // collapseId: updatedList._id,
+                payload: {
+                    'actorId': actor._id,
+                    'category': 'kAuthorAddedToSubscribedList',
+                    'listId': updatedList._id
+                },
+                threadId: updatedList._id,
+                titleLocKey: updatedList.title,
+                topic: 'com.gdwsk.Rexy'
             }
+
+            notificationPublisher('kAuthorAddedToSubscribedList', { deviceTokens, notification, list: updatedList, user, targets })
         }
 
         res.send(updatedList)
@@ -565,23 +560,24 @@ const removeAuthor = async (req, res) => {
         const user = await User.findOneAndUpdate({ _id: userId }, { $pull: { listIds: listId } })
         .populate('settings')
 
-        if (user.settings && _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')) {
-            const notification = {
-                badge: 0,
-                body: `Aww... ${actor.displayName} removed you as an author from their list.`,
-                // collapseId: updatedList._id,
-                payload: {
-                    'actorId': actor._id,
-                    'category': 'kRemovedAsAuthor',
-                    'listId': updatedList._id
-                },
-                threadId: updatedList._id,
-                titleLocKey: updatedList.title,
-                topic: 'com.gdwsk.Rexy'
-            }
+        const userTargets = [user].filter(user => user._id.toString() !== actor._id.toString())
+        const userDeviceTokens = userTargets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
-            notificationPublisher('kRemovedAsAuthor', { deviceTokens: [user.settings.deviceToken], notification, actor, list: updatedList, targets: [user] })
+        const notification = {
+            badge: 0,
+            body: `Aww... ${actor.displayName} removed you as an author from their list.`,
+            // collapseId: updatedList._id,
+            payload: {
+                'actorId': actor._id,
+                'category': 'kRemovedAsAuthor',
+                'listId': updatedList._id
+            },
+            threadId: updatedList._id,
+            titleLocKey: updatedList.title,
+            topic: 'com.gdwsk.Rexy'
         }
+
+        notificationPublisher('kRemovedAsAuthor', { deviceTokens: userDeviceTokens, notification, actor, list: updatedList, targets: userTargets })
 
         let authorIds = []
 
@@ -591,46 +587,42 @@ const removeAuthor = async (req, res) => {
             const targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
-            if (deviceTokens && deviceTokens.length) {
-                const notification = {
-                    badge: 0,
-                    body: `${actor.displayName} removed ${user.displayName.length ? `${user.displayName} as an author` : 'an author'} from your shared list.`,
-                    // collapseId: updatedList._id,
-                    payload: {
-                        'actorId': actor._id,
-                        'category': 'kAuthorRemovedFromAuthoredList',
-                        'listId': updatedList._id
-                    },
-                    threadId: updatedList._id,
-                    titleLocKey: updatedList.title,
-                    topic: 'com.gdwsk.Rexy'
-                }
-
-                notificationPublisher('kAuthorRemovedFromAuthoredList', { deviceTokens, notification, actor, list: updatedList, user, targets })
+            const notification = {
+                badge: 0,
+                body: `${actor.displayName} removed ${user.displayName.length ? `${user.displayName} as an author` : 'an author'} from your shared list.`,
+                // collapseId: updatedList._id,
+                payload: {
+                    'actorId': actor._id,
+                    'category': 'kAuthorRemovedFromAuthoredList',
+                    'listId': updatedList._id
+                },
+                threadId: updatedList._id,
+                titleLocKey: updatedList.title,
+                topic: 'com.gdwsk.Rexy'
             }
+
+            notificationPublisher('kAuthorRemovedFromAuthoredList', { deviceTokens, notification, actor, list: updatedList, user, targets })
         }
 
         if (updatedList.subscribers) {
             const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString) && user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
-            if (deviceTokens && deviceTokens.length) {
-                const notification = {
-                    badge: 0,
-                    body: `${user.displayName.length ? `${user.displayName} was removed as an author` : 'An author was removed'} from your subscribed list.`,
-                    // collapseId: updatedList._id,
-                    payload: {
-                        'actorId': actor._id,
-                        'category': 'kAuthorRemovedFromSubscribedList',
-                        'listId': updatedList._id
-                    },
-                    threadId: updatedList._id,
-                    titleLocKey: updatedList.title,
-                    topic: 'com.gdwsk.Rexy'
-                }
-
-                notificationPublisher('kAuthorRemovedFromSubscribedList', { deviceTokens, notification, list: updatedList, user, targets })
+            const notification = {
+                badge: 0,
+                body: `${user.displayName.length ? `${user.displayName} was removed as an author` : 'An author was removed'} from your subscribed list.`,
+                // collapseId: updatedList._id,
+                payload: {
+                    'actorId': actor._id,
+                    'category': 'kAuthorRemovedFromSubscribedList',
+                    'listId': updatedList._id
+                },
+                threadId: updatedList._id,
+                titleLocKey: updatedList.title,
+                topic: 'com.gdwsk.Rexy'
             }
+
+            notificationPublisher('kAuthorRemovedFromSubscribedList', { deviceTokens, notification, list: updatedList, user, targets })
         }
 
         res.send(updatedList)
@@ -720,47 +712,43 @@ const addPlace = async (req, res) => {
             const targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
-            if (deviceTokens && deviceTokens.length) {
-                const notification = {
-                    badge: 0,
-                    body: `${actor.displayName} added ${place.title.length ? place.title : 'a place'} to your shared list.`,
-                    // collapseId: updatedList._id,
-                    payload: {
-                        'actorId': actor._id,
-                        'category': 'kPlaceAddedToAuthoredList',
-                        'listId': updatedList._id,
-                        'placeId': placeId
-                    },
-                    threadId: updatedList._id,
-                    titleLocKey: updatedList.title,
-                    topic: 'com.gdwsk.Rexy'
-                }
-
-                notificationPublisher('kPlaceAddedToAuthoredList', { deviceTokens, notification, actor, list: updatedList, place, targets })
+            const notification = {
+                badge: 0,
+                body: `${actor.displayName} added ${place.title.length ? place.title : 'a place'} to your shared list.`,
+                // collapseId: updatedList._id,
+                payload: {
+                    'actorId': actor._id,
+                    'category': 'kPlaceAddedToAuthoredList',
+                    'listId': updatedList._id,
+                    'placeId': placeId
+                },
+                threadId: updatedList._id,
+                titleLocKey: updatedList.title,
+                topic: 'com.gdwsk.Rexy'
             }
+
+            notificationPublisher('kPlaceAddedToAuthoredList', { deviceTokens, notification, actor, list: updatedList, place, targets })
         }
 
         if (updatedList.subscribers) {
             const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString) && user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
-            if (deviceTokens && deviceTokens.length) {
-                const notification = {
-                    badge: 0,
-                    body: `${place.title.length ? place.title : 'A place'} was added to your subscribed list.`,
-                    // collapseId: updatedList._id,
-                    payload: {
-                        'category': 'kPlaceAddedToSubscribedList',
-                        'listId': updatedList._id,
-                        'placeId': placeId
-                    },
-                    threadId: updatedList._id,
-                    titleLocKey: updatedList.title,
-                    topic: 'com.gdwsk.Rexy'
-                }
-
-                notificationPublisher('kPlaceAddedToSubscribedList', { deviceTokens, notification, list: updatedList, place, targets })
+            const notification = {
+                badge: 0,
+                body: `${place.title.length ? place.title : 'A place'} was added to your subscribed list.`,
+                // collapseId: updatedList._id,
+                payload: {
+                    'category': 'kPlaceAddedToSubscribedList',
+                    'listId': updatedList._id,
+                    'placeId': placeId
+                },
+                threadId: updatedList._id,
+                titleLocKey: updatedList.title,
+                topic: 'com.gdwsk.Rexy'
             }
+
+            notificationPublisher('kPlaceAddedToSubscribedList', { deviceTokens, notification, list: updatedList, place, targets })
         }
 
         res.send(updatedList)
@@ -834,46 +822,42 @@ const removePlace = async (req, res) => {
             const targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
-            if (deviceTokens && deviceTokens.length) {
-                const notification = {
-                    badge: 0,
-                    body: `${actor.displayName} removed ${place.title ? place.title : 'a place'} from your shared list.`,
-                    // collapseId: updatedList._id,
-                    payload: {
-                        'category': 'kPlaceRemovedFromAuthoredList',
-                        'listId': updatedList._id,
-                        'placeId': placeId
-                    },
-                    threadId: updatedList._id,
-                    titleLocKey: updatedList.title,
-                    topic: 'com.gdwsk.Rexy'
-                }
-
-                notificationPublisher('kPlaceRemovedFromAuthoredList', { deviceTokens, notification, actor, list: updatedList, place, targets })
+            const notification = {
+                badge: 0,
+                body: `${actor.displayName} removed ${place.title ? place.title : 'a place'} from your shared list.`,
+                // collapseId: updatedList._id,
+                payload: {
+                    'category': 'kPlaceRemovedFromAuthoredList',
+                    'listId': updatedList._id,
+                    'placeId': placeId
+                },
+                threadId: updatedList._id,
+                titleLocKey: updatedList.title,
+                topic: 'com.gdwsk.Rexy'
             }
+
+            notificationPublisher('kPlaceRemovedFromAuthoredList', { deviceTokens, notification, actor, list: updatedList, place, targets })
         }
 
         if (updatedList.subscribers) {
             const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString) && user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
-            if (deviceTokens && deviceTokens.length) {
-                const notification = {
-                    badge: 0,
-                    body: `${place.title ? place.title : 'A place'} was removed from your subscribed list.`,
-                    // collapseId: updatedList._id,
-                    payload: {
-                        'category': 'kPlaceRemovedFromSubscribedList',
-                        'listId': updatedList._id,
-                        'placeId': placeId
-                    },
-                    threadId: updatedList._id,
-                    titleLocKey: updatedList.title,
-                    topic: 'com.gdwsk.Rexy'
-                }
-
-                notificationPublisher('kPlaceRemovedFromSubscribedList', { deviceTokens, notification, list: updatedList, place, targets })
+            const notification = {
+                badge: 0,
+                body: `${place.title ? place.title : 'A place'} was removed from your subscribed list.`,
+                // collapseId: updatedList._id,
+                payload: {
+                    'category': 'kPlaceRemovedFromSubscribedList',
+                    'listId': updatedList._id,
+                    'placeId': placeId
+                },
+                threadId: updatedList._id,
+                titleLocKey: updatedList.title,
+                topic: 'com.gdwsk.Rexy'
             }
+
+            notificationPublisher('kPlaceRemovedFromSubscribedList', { deviceTokens, notification, list: updatedList, place, targets })
         }
 
         res.send(updatedList)
@@ -943,23 +927,21 @@ const addSubscriber = async (req, res) => {
         if (updatedList.authors) {
             let deviceTokens = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString() && _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
-            if (deviceTokens && deviceTokens.length) {
-                const notification = {
-                    badge: 0,
-                    body: `${actor.displayName} subscribed to your list.`,
-                    // collapseId: updatedList._id,
-                    payload: {
-                        'actorId': actor._id,
-                        'category': 'kNewSubscriberOnAuthoredList',
-                        'listId': updatedList._id
-                    },
-                    threadId: updatedList._id,
-                    titleLocKey: updatedList.title,
-                    topic: 'com.gdwsk.Rexy'
-                }
-
-                notificationPublisher('kNewSubscriberOnAuthoredList', { deviceTokens, notification, actor, list: updatedList, targets: [user] })
+            const notification = {
+                badge: 0,
+                body: `${actor.displayName} subscribed to your list.`,
+                // collapseId: updatedList._id,
+                payload: {
+                    'actorId': actor._id,
+                    'category': 'kNewSubscriberOnAuthoredList',
+                    'listId': updatedList._id
+                },
+                threadId: updatedList._id,
+                titleLocKey: updatedList.title,
+                topic: 'com.gdwsk.Rexy'
             }
+
+            notificationPublisher('kNewSubscriberOnAuthoredList', { deviceTokens, notification, actor, list: updatedList, targets: [user] })
         }
 
         res.send(updatedList)

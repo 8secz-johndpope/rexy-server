@@ -586,22 +586,23 @@ const addFollowing = async (req, res) => {
         const followedUser = await User.findByIdAndUpdate(userId, { $addToSet: { followerIds: followerUserId } })
         .populate('settings')
 
-        if (followedUser.settings && _.get(followedUser, 'settings.deviceToken') && _.get(followedUser, 'settings.receiveSubscriptionNotifications')) {
-            const notification = {
-                badge: 0,
-                body: `${updatedUser.displayName} started following you.`,
-                // collapseId: updatedList._id,
-                payload: {
-                    'actorId': updatedUser._id,
-                    'category': 'kNewFollower'
-                },
-                threadId: followedUser._id,
-                // titleLocKey: updatedList.title,
-                topic: 'com.gdwsk.Rexy'
-            }
-            
-            notificationPublisher('kNewFollower', { deviceTokens: [followedUser.settings.deviceToken], notification, actor, user: updatedUser, targets: [followedUser] })
+        const userTargets = [followedUser].filter(user => user._id.toString() !== actor._id.toString())
+        const userDeviceTokens = userTargets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
+
+        const notification = {
+            badge: 0,
+            body: `${updatedUser.displayName} started following you.`,
+            // collapseId: updatedList._id,
+            payload: {
+                'actorId': updatedUser._id,
+                'category': 'kNewFollower'
+            },
+            threadId: followedUser._id,
+            // titleLocKey: updatedList.title,
+            topic: 'com.gdwsk.Rexy'
         }
+        
+        notificationPublisher('kNewFollower', { deviceTokens: userDeviceTokens, notification, actor, user: updatedUser, targets: userTargets })
 
         res.send(updatedUser)
 
