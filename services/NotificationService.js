@@ -48,11 +48,9 @@ const provider = new apn.Provider(options)
 // notifications
 const createNotifications = async (message) => {
     console.log('NotificationService.createNotifications')
+
     const body = JSON.parse(message.content.toString())
-
     const { actor, list, place, targets, user } = body.data
-
-    // console.log('body', body)
 
     let attributedDescription = { attributes: [], description: '' }
     let description = ''
@@ -346,14 +344,11 @@ const createNotifications = async (message) => {
             type: body.notificationType
         })
         notificationArray.push(notification)
-
-        console.log('notification', JSON.stringify(notification))        
     })
 
     try {
         await Notification.insertMany(notificationArray)
         channel.ack(message)
-
     } catch (err) {
         console.error('NotificationService.createNotifications err', err)
     }
