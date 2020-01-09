@@ -586,8 +586,8 @@ const addFollowing = async (req, res) => {
         const followedUser = await User.findByIdAndUpdate(userId, { $addToSet: { followerIds: followerUserId } })
         .populate('settings')
 
-        const userTargets = [followedUser].filter(user => user._id.toString() !== actor._id.toString())
-        const userDeviceTokens = userTargets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
+        const targets = [followedUser].filter(user => user._id.toString() !== actor._id.toString())
+        const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
         const notification = {
             badge: 0,
@@ -602,7 +602,7 @@ const addFollowing = async (req, res) => {
             topic: 'com.gdwsk.Rexy'
         }
         
-        notificationPublisher('kNewFollower', { deviceTokens: userDeviceTokens, notification, actor, user: updatedUser, targets: userTargets })
+        notificationPublisher('kNewFollower', { deviceTokens, notification, actor, user: updatedUser, targets })
 
         res.send(updatedUser)
 

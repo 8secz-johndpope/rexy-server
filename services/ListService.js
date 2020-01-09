@@ -437,8 +437,8 @@ const addAuthor = async (req, res) => {
         const user = await User.findByIdAndUpdate({ _id: userId }, { $addToSet: { listIds: listId } }, { new: true })
         .populate('settings')
 
-        const userTargets = [user].filter(user => user._id.toString() !== actor._id.toString())
-        const userDeviceTokens = userTargets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
+        const targets = [user].filter(user => user._id.toString() !== actor._id.toString())
+        const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
         
         const notification = {
             badge: 0,
@@ -454,12 +454,12 @@ const addAuthor = async (req, res) => {
             topic: 'com.gdwsk.Rexy'
         }
 
-        notificationPublisher('kAddedAsAuthor', { deviceTokens: userDeviceTokens, notification, actor, list: updatedList, targets: userTargets })
+        notificationPublisher('kAddedAsAuthor', { deviceTokens, notification, actor, list: updatedList, targets })
 
         let authorIds = []
 
         if (updatedList.authors) {
-            authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id)
+            authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id.toString())
 
             const targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
@@ -482,7 +482,7 @@ const addAuthor = async (req, res) => {
         }
 
         if (updatedList.subscribers) {
-            const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString) && user._id.toString() !== actor._id.toString())
+            const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString()) && user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
             const notification = {
@@ -560,8 +560,8 @@ const removeAuthor = async (req, res) => {
         const user = await User.findOneAndUpdate({ _id: userId }, { $pull: { listIds: listId } })
         .populate('settings')
 
-        const userTargets = [user].filter(user => user._id.toString() !== actor._id.toString())
-        const userDeviceTokens = userTargets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
+        const targets = [user].filter(user => user._id.toString() !== actor._id.toString())
+        const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
         const notification = {
             badge: 0,
@@ -577,12 +577,12 @@ const removeAuthor = async (req, res) => {
             topic: 'com.gdwsk.Rexy'
         }
 
-        notificationPublisher('kRemovedAsAuthor', { deviceTokens: userDeviceTokens, notification, actor, list: updatedList, targets: userTargets })
+        notificationPublisher('kRemovedAsAuthor', { deviceTokens, notification, actor, list: updatedList, targets })
 
         let authorIds = []
 
         if (updatedList.authors) {
-            authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id)
+            authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id.toString())
 
             const targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
@@ -605,7 +605,7 @@ const removeAuthor = async (req, res) => {
         }
 
         if (updatedList.subscribers) {
-            const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString) && user._id.toString() !== actor._id.toString())
+            const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString()) && user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
             const notification = {
@@ -707,7 +707,7 @@ const addPlace = async (req, res) => {
         let authorIds = []
 
         if (updatedList.authors) {
-            authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id)
+            authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id.toString())
 
             const targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
@@ -731,7 +731,7 @@ const addPlace = async (req, res) => {
         }
 
         if (updatedList.subscribers) {
-            const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString) && user._id.toString() !== actor._id.toString())
+            const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString()) && user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
             const notification = {
@@ -817,7 +817,7 @@ const removePlace = async (req, res) => {
         let authorIds = []
 
         if (updatedList.authors) {
-            authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id)
+            authorIds = updatedList.authors.filter(author => author._id.toString()).map(author => author._id.toString())
 
             const targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
@@ -840,7 +840,7 @@ const removePlace = async (req, res) => {
         }
 
         if (updatedList.subscribers) {
-            const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString) && user._id.toString() !== actor._id.toString())
+            const targets = updatedList.subscribers.filter(user => !authorIds.includes(user._id.toString()) && user._id.toString() !== actor._id.toString())
             const deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
             const notification = {
@@ -922,10 +922,11 @@ const addSubscriber = async (req, res) => {
             })
         }
 
-        const user = await User.findByIdAndUpdate(userId, { $addToSet: { subscribedListIds: listId} })
+        await User.findByIdAndUpdate(userId, { $addToSet: { subscribedListIds: listId} })
 
         if (updatedList.authors) {
-            let deviceTokens = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString() && _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
+            let targets = updatedList.authors.filter(user => user._id.toString() !== actor._id.toString())
+            let deviceTokens = targets.filter(user => _.get(user, 'settings.deviceToken') && _.get(user, 'settings.receiveSubscriptionNotifications')).map(user => user.settings.deviceToken)
 
             const notification = {
                 badge: 0,
@@ -941,7 +942,7 @@ const addSubscriber = async (req, res) => {
                 topic: 'com.gdwsk.Rexy'
             }
 
-            notificationPublisher('kNewSubscriberOnAuthoredList', { deviceTokens, notification, actor, list: updatedList, targets: [user] })
+            notificationPublisher('kNewSubscriberOnAuthoredList', { deviceTokens, notification, actor, list: updatedList, targets })
         }
 
         res.send(updatedList)
