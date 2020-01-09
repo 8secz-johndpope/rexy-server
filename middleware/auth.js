@@ -22,6 +22,9 @@ const validateToken = async (req, res, next) => {
     const token = req.header('Authorization').replace('Bearer ', '')
 
     try {
+        const decodedToken = jwt.decode(token, { json: true })
+        console.log('decodedToken', decodedToken)
+        
         const { sub } = jwt.decode(token, { json: true })
 
         // const data = await verifyPromised(token, getKey)
